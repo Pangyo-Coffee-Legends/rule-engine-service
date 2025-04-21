@@ -2,18 +2,13 @@ name: threshold CI/CD with Maven
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "feature/threshold-#3" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "feature/threshold-#3" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      INFLUX_URL: ${{ secrets.INFLUX_URL }}
-      INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
-      INFLUX_ORG: ${{ secrets.INFLUX_ORG }}
-      INFLUX_BUCKET: ${{ secrets.INFLUX_BUCKET }}
 
     steps:
       - uses: actions/checkout@v3
@@ -37,7 +32,6 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           source: "target/*.jar"
           target: "~/threshold/"
-          rm: false
 
       - name: execute eureka startup script
         uses: appleboy/ssh-action@master
@@ -47,5 +41,5 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script_stop: true
-          script: "cd ~/eureka && ./startup.sh"
+          script: "cd ~/threshold && ./startup.sh"
 
