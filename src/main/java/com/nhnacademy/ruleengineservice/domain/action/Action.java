@@ -1,9 +1,13 @@
 package com.nhnacademy.ruleengineservice.domain.action;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Action 엔티티는 규칙이 발동될 때 실행될 동작(액션)을 정의합니다.
@@ -71,11 +75,13 @@ public class Action {
     /**
      * Action 객체의 생성자.
      *
-     * @param actType     액션 비교 타입 (예: EQ, GT, LT 등)
+     * @param rule         연관 규칙 엔티티
+     * @param actType      액션 비교 타입 (예: EMAIL, PUSH, API_CALL, LOG 등)
      * @param actParams    행동이 적용될 필드명
      * @param actPriority  행동 평가 우선순위
      */
-    private Action(String actType, String actParams, Integer actPriority) {
+    private Action(Rule rule, String actType, String actParams, Integer actPriority) {
+        this.rule = rule;
         this.actType = actType;
         this.actParams = actParams;
         this.actPriority = actPriority;
@@ -84,20 +90,56 @@ public class Action {
     /**
      * Action 객체를 생성하는 정적 팩토리 메서드.
      *
-     * @param actType     액션 비교 타입 (예: EQ, GT, LT 등)
+     * @param rule         연관 규칙 엔티티
+     * @param actType      액션 비교 타입 (예: EMAIL, PUSH, API_CALL, LOG 등)
      * @param actParams    행동이 적용될 필드명
      * @param actPriority  행동 평가 우선순위
      * @return 새 Action 인스턴스
      */
-    public static Action ofNewAction(String actType, String actParams, Integer actPriority) {
-        return new Action(actType, actParams, actPriority);
+    public static Action ofNewAction(Rule rule, String actType, String actParams, Integer actPriority) {
+        return new Action(rule, actType, actParams, actPriority);
     }
 
     /**
      * 생성시 자동으로 생성 날짜를 만들어 준다.
+     * 저장 전 Map -> JSON 문자열 변환
      */
     @PrePersist
-    public void prePersist() { this.createdAt = LocalDateTime.now(); }
+    public void prePersist() throws JsonProcessingException {
+        this.createdAt = LocalDateTime.now();
+
+        if (actParamsMap != null) {
+            ObjectMapper mapper = new ObjectMapper();
+            this.actParams = mapper.writeValueAsString(actParamsMap);
+        }
+    }
+
+    /**
+     * DB 에 저장되지 않는 임시 필드
+     */
+    @Transient
+    private Map<String, Object> actParamsMap;
+
+    /**
+     * 조회 후 JSON 문자열 -> Map 변환
+     * @throws JsonProcessingException Json 임시 처리
+     */
+    @PostLoad
+    public void postLoad() throws JsonProcessingException {
+        if (actParams != null) {
+            ObjectMapper mapper = new ObjectMapper();
+            this.actParamsMap = mapper.readValue(actParams, new TypeReference<Map<String, Object>>() {
+            });
+        }
+    }
+
+    public Map<String, Object> getActParamsMap() {
+        return actParamsMap;
+    }
+
+    public void setActParamsMap(Map<String, Object> actParamsMap) {
+        this.actParamsMap = actParamsMap;
+    }
 
     public Rule getRule() {
         return rule;
@@ -127,7 +169,6 @@ public class Action {
     public String toString() {
         return "Action{" +
                 "actNo=" + actNo +
-                ", rule=" + rule +
                 ", actType='" + actType + '\'' +
                 ", actParams='" + actParams + '\'' +
                 ", actPriority=" + actPriority +

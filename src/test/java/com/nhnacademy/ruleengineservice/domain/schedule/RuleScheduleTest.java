@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.domain.schedule;
 
+import com.nhnacademy.ruleengineservice.domain.rule.Rule;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -21,10 +23,16 @@ class RuleScheduleTest {
     @Test
     @DisplayName("RuleSchedule 객체 생성 및 필드 값 검증")
     void createRuleSchedule_success() {
+        RuleGroup group = RuleGroup.ofNewRuleGroup("group", "des", 1);
+        entityManager.persist(group);
+
+        Rule rule = Rule.ofNewRule(group, "rule", "description", 2);
+        entityManager.persist(rule);
+
         String cronExpression = "0 0 12 * * ? *";
         String timeZone = "Asia/Seoul";
 
-        RuleSchedule origin = RuleSchedule.ofNewRuleSchedule(cronExpression,timeZone,5);
+        RuleSchedule origin = RuleSchedule.ofNewRuleSchedule(rule, cronExpression, timeZone,5);
         entityManager.persist(origin);
         entityManager.flush();
         entityManager.clear();

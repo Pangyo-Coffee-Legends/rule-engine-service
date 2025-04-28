@@ -8,6 +8,10 @@ import java.time.LocalDateTime;
 /**
  * RuleParameter 엔티티는 규칙(Rule)에 연결된 파라미터(매개변수) 정보를 저장합니다.
  * 각 파라미터는 규칙 실행 시 필요한 동적 값을 관리하는 데 사용됩니다.
+ * <p>
+ * 확장성을 고려하여 만들었고, 파라미터가 여러 개거나
+ * 룰마다 파라미터 종류/개수가 다르거나
+ * 파라미터에 추가 정보가 필요하다면 이것이 필요합니다.
  */
 @Entity
 @Table(name = "rule_parameters")
@@ -62,10 +66,12 @@ public class RuleParameter {
     /**
      * Rule Parameter 객체의 생성자
      *
-     * @param paramName 파라미터 이름
-     * @param paramValue 파라미터 값
+     * @param rule          연관 규칙 엔티티
+     * @param paramName     파라미터 이름
+     * @param paramValue    파라미터 값
      */
-    private RuleParameter(String paramName, String paramValue) {
+    private RuleParameter(Rule rule, String paramName, String paramValue) {
+        this.rule = rule;
         this.paramName = paramName;
         this.paramValue = paramValue;
     }
@@ -73,12 +79,13 @@ public class RuleParameter {
     /**
      * Rule Parameter 객체를 생성하는 정적 팩토리 메서드
      *
-     * @param paramName 파라미터 이름
-     * @param paramValue 파라미터 값
-     * @return 새 Rule Parameter 인스턴스
+     * @param rule          연관 규칙 엔티티
+     * @param paramName     파라미터 이름
+     * @param paramValue    파라미터 값
+     * @return              새 Rule Parameter 인스턴스
      */
-    public static RuleParameter ofNewRuleParameter(String paramName, String paramValue) {
-        return new RuleParameter(paramName, paramValue);
+    public static RuleParameter ofNewRuleParameter(Rule rule, String paramName, String paramValue) {
+        return new RuleParameter(rule, paramName, paramValue);
     }
 
     /**
@@ -92,6 +99,10 @@ public class RuleParameter {
      */
     @PreUpdate
     public void preUpdate() { this.updatedAt = LocalDateTime.now(); }
+
+    public Rule getRule() {
+        return rule;
+    }
 
     public Long getParamNo() {
         return paramNo;

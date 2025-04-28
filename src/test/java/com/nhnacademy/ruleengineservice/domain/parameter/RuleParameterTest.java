@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.domain.parameter;
 
+import com.nhnacademy.ruleengineservice.domain.rule.Rule;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -22,7 +24,13 @@ class RuleParameterTest {
     @Test
     @DisplayName("rule parameter 검증")
     void createRuleParameter() {
-        RuleParameter parameter = RuleParameter.ofNewRuleParameter("max_limit", "1000000");
+        RuleGroup group = RuleGroup.ofNewRuleGroup("group", "des", 1);
+        entityManager.persist(group);
+
+        Rule rule = Rule.ofNewRule(group, "rule", "description", 2);
+        entityManager.persist(rule);
+
+        RuleParameter parameter = RuleParameter.ofNewRuleParameter(rule, "max_limit", "1000000");
 
         entityManager.persist(parameter);
         entityManager.flush();

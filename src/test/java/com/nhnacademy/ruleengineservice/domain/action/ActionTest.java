@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.domain.action;
 
+import com.nhnacademy.ruleengineservice.domain.rule.Rule;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -27,13 +29,18 @@ class ActionTest {
         String actParams = "{\"to\":\"test@company.com\",\"subject\":\"테스트\"}";
         Integer actPriority = 1;
 
-        Action origin = Action.ofNewAction(actType, actParams, actPriority);
+        RuleGroup group = RuleGroup.ofNewRuleGroup("test G", "test D", 1);
+        entityManager.persist(group);
+        Rule rule = Rule.ofNewRule(group, "test R", "test d", 1);
+        entityManager.persist(rule);
+
+        Action origin = Action.ofNewAction(rule, actType, actParams, actPriority);
         entityManager.persist(origin);
         entityManager.flush();
         entityManager.clear();
 
         Action action = entityManager.find(Action.class, origin.getActNo());
-        log.debug("action: {}", action);
+        log.debug("action 조회 : {}", action);
 
         assertNotNull(action);
         Assertions.assertAll(

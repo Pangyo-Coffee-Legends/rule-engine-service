@@ -79,12 +79,14 @@ public class Condition {
     /**
      * Condition 객체의 생성자.
      *
+     * @param rule        연관 규칙 엔티티
      * @param conType     조건 비교 타입 (예: EQ, GT, LT 등)
      * @param conField    조건이 적용될 필드명
      * @param conValue    비교할 값
      * @param conPriority 조건 평가 우선순위
      */
-    private Condition(String conType, String conField, String conValue, Integer conPriority) {
+    private Condition(Rule rule, String conType, String conField, String conValue, Integer conPriority) {
+        this.rule = rule;
         this.conType = conType;
         this.conField = conField;
         this.conValue = conValue;
@@ -94,14 +96,15 @@ public class Condition {
     /**
      * Condition 객체를 생성하는 정적 팩토리 메서드.
      *
+     * @param rule        연관 규칙 엔티티
      * @param conType     조건 비교 타입 (예: EQ, GT, LT 등)
      * @param conField    조건이 적용될 필드명
      * @param conValue    비교할 값
      * @param conPriority 조건 평가 우선순위
      * @return 새 Condition 인스턴스
      */
-    public static Condition ofNewCondition(String conType, String conField, String conValue, Integer conPriority) {
-        return new Condition(conType, conField, conValue, conPriority);
+    public static Condition ofNewCondition(Rule rule, String conType, String conField, String conValue, Integer conPriority) {
+        return new Condition(rule, conType, conField, conValue, conPriority);
     }
 
     /**
@@ -109,6 +112,10 @@ public class Condition {
      */
     @PrePersist
     public void prePersist() { this.createdAt = LocalDateTime.now(); }
+
+    public void setRule(Rule rule) {
+        this.rule = rule;
+    }
 
     public Rule getRule() {
         return rule;
@@ -142,7 +149,6 @@ public class Condition {
     public String toString() {
         return "Condition{" +
                 "conditionNo=" + conditionNo +
-                ", rule=" + rule +
                 ", conType='" + conType + '\'' +
                 ", conField='" + conField + '\'' +
                 ", conValue='" + conValue + '\'' +

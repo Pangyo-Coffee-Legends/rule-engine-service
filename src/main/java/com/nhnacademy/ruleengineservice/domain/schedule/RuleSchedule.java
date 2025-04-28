@@ -91,12 +91,14 @@ public class RuleSchedule {
     /**
      * RuleSchedule 객체의 생성자
      *
-     * @param cronExpression 크론 표현식
-     * @param timeZone 시간대
-     * @param maxRetires 최대 재시도 횟수
-     * @param active 활성화 여부
+     * @param rule              연관 규칙 엔티티
+     * @param cronExpression    크론 표현식
+     * @param timeZone          시간대
+     * @param maxRetires        최대 재시도 횟수
+     * @param active            활성화 여부
      */
-    private RuleSchedule(String cronExpression, String timeZone, Integer maxRetires, Boolean active) {
+    private RuleSchedule(Rule rule, String cronExpression, String timeZone, Integer maxRetires, Boolean active) {
+        this.rule = rule;
         this.cronExpression = cronExpression;
         this.timeZone = timeZone;
         this.maxRetires = maxRetires;
@@ -106,13 +108,14 @@ public class RuleSchedule {
     /**
      * RuleSchedule 객체의 생성자
      *
-     * @param cronExpression 크론 표현식
-     * @param timeZone 시간대
-     * @param maxRetires 최대 재시도 횟수
+     * @param rule              연관 규칙 엔티티
+     * @param cronExpression    크론 표현식
+     * @param timeZone          시간대
+     * @param maxRetires        최대 재시도 횟수
      * @return 새 RuleSchedule 인스턴스
      */
-    public static RuleSchedule ofNewRuleSchedule(String cronExpression, String timeZone, Integer maxRetires) {
-        return new RuleSchedule(cronExpression, timeZone, maxRetires, true);
+    public static RuleSchedule ofNewRuleSchedule(Rule rule, String cronExpression, String timeZone, Integer maxRetires) {
+        return new RuleSchedule(rule, cronExpression, timeZone, maxRetires, true);
     }
 
     /**
@@ -120,6 +123,10 @@ public class RuleSchedule {
      */
     @PrePersist
     public void prePersist() { this.createdAt = LocalDateTime.now(); }
+
+    public Rule getRule() {
+        return rule;
+    }
 
     public Long getScheduleNo() {
         return scheduleNo;
@@ -149,7 +156,6 @@ public class RuleSchedule {
     public String toString() {
         return "RuleSchedule{" +
                 "scheduleNo=" + scheduleNo +
-                ", rule=" + rule +
                 ", cronExpression='" + cronExpression + '\'' +
                 ", timeZone='" + timeZone + '\'' +
                 ", maxRetires=" + maxRetires +
