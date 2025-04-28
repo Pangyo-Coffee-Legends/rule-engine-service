@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.domain.trigger;
 
+import com.nhnacademy.ruleengineservice.domain.rule.Rule;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -24,13 +26,18 @@ class TriggerEventTest {
         String eventType = "INSERT";
         String eventParams = "{\"cron\":\"0 0 8 * * ?\",\"timeZone\":\"Asia/Seoul\"}";;
 
-        TriggerEvent triggerEvent = TriggerEvent.ofNewTriggerEvent(eventType, eventParams);
+        RuleGroup group = RuleGroup.ofNewRuleGroup("test G", "test D", 1);
+        entityManager.persist(group);
+        Rule rule = Rule.ofNewRule(group, "test R", "test d", 1);
+        entityManager.persist(rule);
+
+        TriggerEvent triggerEvent = TriggerEvent.ofNewTriggerEvent(rule, eventType, eventParams);
         entityManager.persist(triggerEvent);
         entityManager.flush();
         entityManager.clear();
 
         TriggerEvent target = entityManager.find(TriggerEvent.class, triggerEvent.getEventNo());
-        log.debug("TriggerEvent 저장 및 조회 성공: {}", target);
+        log.debug("TriggerEvent 저장 및 조회 성공 : {}", target);
 
         assertNotNull(target);
         assertAll(

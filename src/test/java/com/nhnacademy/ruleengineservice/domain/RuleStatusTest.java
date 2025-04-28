@@ -13,7 +13,7 @@ class RuleStatusTest {
     void testEnumValues() {
         assertEquals("활성", RuleStatus.ENABLED.getName());
         assertEquals("비활성", RuleStatus.DISABLED.getName());
-        assertEquals("대기", RuleStatus.PENDING.getName());
+        assertEquals("검증 대기", RuleStatus.PENDING.getName());
         assertEquals("삭제", RuleStatus.DELETE.getName());
     }
 

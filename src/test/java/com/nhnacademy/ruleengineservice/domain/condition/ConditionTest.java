@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.domain.condition;
 
+import com.nhnacademy.ruleengineservice.domain.rule.Rule;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -27,7 +29,12 @@ class ConditionTest {
         String conValue = "80";
         Integer conPriority = 1;
 
-        Condition cond = Condition.ofNewCondition(conType, conField, conValue, conPriority);
+        RuleGroup group = RuleGroup.ofNewRuleGroup("test group", "test D", 1);
+        entityManager.persist(group);
+        Rule rule = Rule.ofNewRule(group, "test rule", "test d", 1);
+        entityManager.persist(rule);
+
+        Condition cond = Condition.ofNewCondition(rule, conType, conField, conValue, conPriority);
         entityManager.persist(cond);
         entityManager.flush();
         entityManager.clear();

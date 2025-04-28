@@ -53,16 +53,16 @@ public class RuleGroup {
     private String ruleGroupDescription;
 
     /**
-     * 그룹의 활성화 상태입니다.
-     */
-    @Column(nullable = false)
-    private boolean active;
-
-    /**
      * 그룹의 우선순위입니다. 숫자가 낮을수록 우선순위가 높습니다.
      */
     @Column(nullable = false)
     private Integer priority;
+
+    /**
+     * 그룹의 활성화 상태입니다.
+     */
+    @Column(nullable = false)
+    private boolean active;
 
     /**
      * 그룹에 속한 규칙(Rule)들의 목록입니다.
@@ -97,10 +97,10 @@ public class RuleGroup {
      *
      * @param ruleGroupName 그룹 이름
      * @param ruleGroupDescription 그룹 설명
-     * @param active 활성화 여부
      * @param priority 우선순위
+     * @param active 활성화 여부
      */
-    private RuleGroup(String ruleGroupName, String ruleGroupDescription, boolean active, Integer priority) {
+    private RuleGroup(String ruleGroupName, String ruleGroupDescription, Integer priority, boolean active) {
         this.ruleGroupName = ruleGroupName;
         this.ruleGroupDescription = ruleGroupDescription;
         this.active = active;
@@ -117,7 +117,7 @@ public class RuleGroup {
      * @return 새로 생성된 Rule Group 객체
      */
     public static RuleGroup ofNewRuleGroup(String ruleGroupName, String ruleGroupDescription, Integer priority) {
-        return new RuleGroup(ruleGroupName,ruleGroupDescription,true,priority);
+        return new RuleGroup(ruleGroupName,ruleGroupDescription, priority,true);
     }
 
     /**
@@ -189,6 +189,10 @@ public class RuleGroup {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     @Override
