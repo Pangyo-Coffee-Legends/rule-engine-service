@@ -31,10 +31,10 @@ public class Condition {
     /**
      * 조건 비교 타입
      * <p>
-     * EQ: 값이 같은지 비교,
-     * NE: 값이 다른지 비교,
-     * GT: 값이 큰지 비교,
-     * LT: 값이 작은지 비교,
+     * EQ (EQUALS): 값이 같은지 비교,
+     * NE (NOT_EQUALS): 값이 다른지 비교,
+     * GT (GREATER_THAN): 값이 큰지 비교,
+     * LT (LESS_THAN): 값이 작은지 비교,
      * GTE: 크거나 같은지 비교,
      * LTE: 작거나 같은지 비교,
      * IN: 포함,
