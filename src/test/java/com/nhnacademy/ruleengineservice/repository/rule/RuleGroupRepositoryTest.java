@@ -57,4 +57,24 @@ class RuleGroupRepositoryTest {
         assertNotNull(found);
         assertTrue(found.stream().allMatch(g -> g.isActive() == true));
     }
+
+    @Test
+    @DisplayName("existsByRuleGroupName - 존재하는 그룹명")
+    void existsByRuleGroupName() {
+        RuleGroup group = RuleGroup.ofNewRuleGroup("TEST_GROUP", "description", 1);
+        group.setActive(true);
+        ruleGroupRepository.save(group);
+
+        boolean exists = ruleGroupRepository.existsByRuleGroupName("TEST_GROUP");
+
+        assertTrue(exists);
+    }
+
+    @Test
+    @DisplayName("existsByRuleGroupName - 존재하지 않는 그룹명")
+    void existsByRuleGroupName_whenNotExists_returnsFalse() {
+        boolean exists = ruleGroupRepository.existsByRuleGroupName("NOT_EXIST_GROUP");
+
+        assertFalse(exists);
+    }
 }
