@@ -116,6 +116,10 @@ public class RuleParameter {
         return paramValue;
     }
 
+    public void setParamValue(String paramValue) {
+        this.paramValue = paramValue;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
