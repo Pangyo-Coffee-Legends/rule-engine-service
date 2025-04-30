@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.domain.parameter;
 
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
  * 파라미터에 추가 정보가 필요하다면 이것이 필요합니다.
  */
 @Entity
+@Getter
 @Table(name = "rule_parameters")
 public class RuleParameter {
 
@@ -100,32 +102,8 @@ public class RuleParameter {
     @PreUpdate
     public void preUpdate() { this.updatedAt = LocalDateTime.now(); }
 
-    public Rule getRule() {
-        return rule;
-    }
-
-    public Long getParamNo() {
-        return paramNo;
-    }
-
-    public String getParamName() {
-        return paramName;
-    }
-
-    public String getParamValue() {
-        return paramValue;
-    }
-
     public void setParamValue(String paramValue) {
         this.paramValue = paramValue;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.dto.parameter;
 
+import lombok.Value;
+
 /**
  * 파라미터(Parameter) 등록 요청을 위한 DTO 클래스입니다.
  * <p>
@@ -17,48 +19,24 @@ package com.nhnacademy.ruleengineservice.dto.parameter;
  *
  * @author 강승우
  */
+@Value
 public class ParameterRegisterRequest {
 
     /**
      * 파라미터가 속할 규칙의 식별자입니다.
      * rule_parameters 테이블의 rule_no 컬럼과 매핑되며, rules 테이블을 참조합니다.
      */
-    private Long ruleNo;
+    Long ruleNo;
 
     /**
      * 파라미터의 이름입니다.
      * rule_parameters 테이블의 param_name 컬럼과 매핑됩니다.
      */
-    private String paramName;
+    String paramName;
 
     /**
      * 파라미터의 값입니다.
      * rule_parameters 테이블의 param_value 컬럼과 매핑됩니다.
      */
-    private String paramValue;
-
-    /**
-     * 모든 필드를 초기화하는 생성자입니다.
-     *
-     * @param ruleNo     파라미터가 속할 규칙의 식별자
-     * @param paramName  파라미터 이름
-     * @param paramValue 파라미터 값
-     */
-    public ParameterRegisterRequest(Long ruleNo, String paramName, String paramValue) {
-        this.ruleNo = ruleNo;
-        this.paramName = paramName;
-        this.paramValue = paramValue;
-    }
-
-    public Long getRuleNo() {
-        return ruleNo;
-    }
-
-    public String getParamName() {
-        return paramName;
-    }
-
-    public String getParamValue() {
-        return paramValue;
-    }
+    String paramValue;
 }

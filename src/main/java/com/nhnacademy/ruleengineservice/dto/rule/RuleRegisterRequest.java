@@ -3,6 +3,7 @@ package com.nhnacademy.ruleengineservice.dto.rule;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Value;
 
 /**
  * 규칙(Rule) 등록 요청을 위한 DTO 클래스입니다.
@@ -22,6 +23,7 @@ import jakarta.validation.constraints.Size;
  *
  * @author 강승우
  */
+@Value
 public class RuleRegisterRequest {
 
     /**
@@ -29,21 +31,21 @@ public class RuleRegisterRequest {
      * rule_groups 테이블의 rule_group_no 컬럼과 매핑됩니다.
      */
     @NotNull(message = "규칙 그룹 식별자는 필수 항목입니다.")
-    private final Long ruleGroupNo;
+    Long ruleGroupNo;
 
     /**
      * 등록할 규칙의 이름입니다.
      * rules 테이블의 rule_name 컬럼과 매핑됩니다.
      */
     @NotBlank(message = "규칙 이름은 필수 항목입니다.")
-    private final String ruleName;
+    String ruleName;
 
     /**
      * 등록할 규칙의 상세 설명입니다.
      * 선택 항목이며, rules 테이블의 rule_description 컬럼과 매핑됩니다.
      */
     @Size(max = 200, message = "최대 길이가 200 입니다.")
-    private final String ruleDescription;
+    String ruleDescription;
 
     /**
      * 등록할 규칙의 우선순위입니다.
@@ -51,36 +53,5 @@ public class RuleRegisterRequest {
      * 숫자가 낮을수록 높은 우선순위를 가집니다.
      */
     @NotNull(message = "우선순위는 필수 항목입니다.")
-    private final Integer rulePriority;
-
-    /**
-     * 모든 필드를 초기화하는 생성자입니다.
-     *
-     * @param ruleGroupNo     규칙 그룹 식별자
-     * @param ruleName        규칙 이름
-     * @param ruleDescription 규칙 설명
-     * @param rulePriority    규칙 우선순위
-     */
-    public RuleRegisterRequest(Long ruleGroupNo, String ruleName, String ruleDescription, Integer rulePriority) {
-        this.ruleGroupNo = ruleGroupNo;
-        this.ruleName = ruleName;
-        this.ruleDescription = ruleDescription;
-        this.rulePriority = rulePriority;
-    }
-
-    public Long getRuleGroupNo() {
-        return ruleGroupNo;
-    }
-
-    public String getRuleName() {
-        return ruleName;
-    }
-
-    public String getRuleDescription() {
-        return ruleDescription;
-    }
-
-    public Integer getRulePriority() {
-        return rulePriority;
-    }
+    Integer rulePriority;
 }

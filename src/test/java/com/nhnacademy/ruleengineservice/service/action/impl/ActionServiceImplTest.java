@@ -6,11 +6,10 @@ import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
+import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
 import com.nhnacademy.ruleengineservice.exception.action.ActionNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.repository.action.ActionRepository;
-import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
-import com.nhnacademy.ruleengineservice.service.rule.RuleService;
 import com.nhnacademy.ruleengineservice.service.rule.impl.RuleServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -78,9 +77,7 @@ class ActionServiceImplTest {
         when(ruleService.getRuleEntity(nonExistentRuleNo))
                 .thenThrow(new RuleNotFoundException(nonExistentRuleNo));
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            actionService.registerAction(request);
-        });
+        assertThrows(RuleNotFoundException.class, () -> actionService.registerAction(request));
     }
 
     @Test
@@ -103,9 +100,7 @@ class ActionServiceImplTest {
         when(actionRepository.existsById(nonExistentActionNo)).thenReturn(false);
 
         // when & then
-        assertThrows(ActionNotFoundException.class, () -> {
-            actionService.deleteAction(nonExistentActionNo);
-        });
+        assertThrows(ActionNotFoundException.class, () -> actionService.deleteAction(nonExistentActionNo));
         verify(actionRepository, never()).deleteById(anyLong());
     }
 
@@ -169,16 +164,48 @@ class ActionServiceImplTest {
     }
 
     @Test
-    @DisplayName("액션 실행 - EMAIL 성공")
+    @DisplayName("액션 실행 - EMAIL 성공 (유효한 파라미터)")
     void performAction_EMAIL_success() {
+        // Given
         Long actionNo = 1L;
         Map<String, Object> context = new HashMap<>();
-        context.put("recipient", "test@example.com");
+
+        // 유효한 JSON 파라미터 생성
+        String validJsonParams = "{\"to\":\"test@example.com\",\"subject\":\"Test Subject\",\"body\":\"Test Body\"}";
 
         RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
         Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
 
-        Action mockAction = Action.ofNewAction(mockRule, "EMAIL", "{\"template\":\"welcome\"}", 1);
+        Action mockAction = Action.ofNewAction(mockRule, "EMAIL", validJsonParams, 1);
+        setField(mockAction, "actNo", actionNo);
+
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
+
+        // When
+        ActionResult result = actionService.performAction(actionNo, context);
+
+        // Then
+        assertAll(
+                () -> assertTrue(result.isSuccess()),
+                () -> assertEquals("EMAIL", result.getActType()),
+                () -> assertEquals("이메일 발송 성공", result.getMessage()),
+                () -> assertNull(result.getOutput()) // 이메일은 output 없음
+        );
+
+        log.info("이메일 발송 결과: {}", result);
+    }
+
+
+    @Test
+    @DisplayName("액션 실행 - WEBHOOK 성공")
+    void performAction_WEBHOOK_success() {
+        Long actionNo = 1L;
+        Map<String, Object> context = new HashMap<>();
+        context.put("url", "http://example.com/webhook");
+
+        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
+        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
+        Action mockAction = Action.ofNewAction(mockRule, "WEBHOOK", "{}", 1);
         setField(mockAction, "actNo", actionNo);
 
         when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
@@ -186,9 +213,107 @@ class ActionServiceImplTest {
         ActionResult result = actionService.performAction(actionNo, context);
 
         assertTrue(result.isSuccess());
-        assertEquals("EMAIL", result.getActType());
-        assertEquals("이메일 발송 성공", result.getMessage());
+        assertAll(
+                () -> assertEquals("WEBHOOK", result.getActType()),
+                () -> assertEquals("웹훅 호출 성공", result.getMessage())
+        );
     }
+
+    @Test
+    @DisplayName("액션 실행 - LOG 성공")
+    void performAction_LOG_success() {
+        Long actionNo = 1L;
+        Map<String, Object> context = new HashMap<>();
+        context.put("message", "Test log message");
+
+        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
+        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
+        Action mockAction = Action.ofNewAction(mockRule, "LOG", "{}", 1);
+        setField(mockAction, "actNo", actionNo);
+
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
+
+        ActionResult result = actionService.performAction(actionNo, context);
+
+        assertTrue(result.isSuccess());
+        assertAll(
+                () -> assertEquals("LOG", result.getActType()),
+                () -> assertEquals("로그 기록 성공", result.getMessage())
+        );
+    }
+
+    @Test
+    @DisplayName("액션 실행 - COMFORT_NOTIFICATION 성공")
+    void performAction_COMFORT_NOTIFICATION_success() {
+        Long actionNo = 1L;
+        Map<String, Object> context = new HashMap<>();
+        context.put("location", "Room 101");
+        context.put("comfortIndex", 75.5);
+        context.put("comfortGrade", "Good");
+
+        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
+        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
+        Action mockAction = Action.ofNewAction(mockRule, "COMFORT_NOTIFICATION", "{}", 1);
+        setField(mockAction, "actNo", actionNo);
+
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
+
+        ActionResult result = actionService.performAction(actionNo, context);
+
+        assertTrue(result.isSuccess());
+        assertEquals("COMFORT_NOTIFICATION", result.getActType());
+        assertEquals("쾌적도 알림 전송 성공", result.getMessage());
+        assertNotNull(result.getOutput());
+        assertInstanceOf(ComfortInfoDTO.class, result.getOutput());
+    }
+
+    @Test
+    @DisplayName("액션 실행 중 예외 발생 시 실패 결과 반환")
+    void performAction_exceptionThrown_returnsFailure() {
+        Long actionNo = 1L;
+        Map<String, Object> context = new HashMap<>();
+
+        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
+        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
+
+        Action mockAction = Action.ofNewAction(mockRule, "EMAIL", "invalid_json", 1);
+        setField(mockAction, "actNo", actionNo);
+
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
+
+        ActionResult result = actionService.performAction(actionNo, context);
+        log.debug("예외 발생 확인 : {}", result);
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getMessage().contains("액션 실행 중 오류"));
+    }
+
+    @Test
+    @DisplayName("룰에 연결된 모든 액션 실행")
+    void executeActionsForRule_multipleActions() {
+        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
+        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
+        setField(mockRule, "ruleNo", 1L);
+
+        Action action1 = Action.ofNewAction(mockRule, "EMAIL", "{}", 1);
+        Action action2 = Action.ofNewAction(mockRule, "LOG", "{}", 2);
+        setField(action1, "actNo", 1L);
+        setField(action2, "actNo", 2L);
+        List<Action> actions = List.of(action1, action2);
+
+        when(actionRepository.findByRule(mockRule)).thenReturn(actions);
+        when(actionRepository.findById(anyLong())).thenAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            return Optional.of(actions.stream().filter(a -> a.getActNo().equals(id)).findFirst().orElseThrow());
+        });
+
+        List<ActionResult> results = actionService.executeActionsForRule(mockRule, new HashMap<>());
+
+        assertEquals(2, results.size());
+        assertEquals("EMAIL", results.get(0).getActType());
+        assertEquals("LOG", results.get(1).getActType());
+    }
+
 
     @Test
     @DisplayName("액션 실행 - 지원하지 않는 타입")

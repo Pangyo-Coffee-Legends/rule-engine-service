@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.service.action.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.domain.action.Action;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
@@ -13,6 +15,8 @@ import com.nhnacademy.ruleengineservice.service.rule.RuleService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,51 +83,55 @@ public class ActionServiceImpl implements ActionService {
                 .orElseThrow(() -> new ActionNotFoundException(actionNo));
 
         boolean success = false;
-        String message = "";
+        String message;
         Object output = null;
 
         try {
             // 유형별 실행 로직 분기 (예시)
             switch (action.getActType()) {
                 case "EMAIL":
-                    // 이메일 발송 로직 (예: context 에서 수신자, 제목, 본문 추출)
-                    // output = emailService.sendEmail(...);
-                    success = true;
-                    message = "이메일 발송 성공";
+                    try {
+                        // JSON 파싱 시도 (예외 발생 가능)
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        JsonNode emailParams = objectMapper.readTree(action.getActParams());
+
+                        String to = emailParams.get("to").asText();
+                        String subject = emailParams.get("subject").asText();
+                        String body = emailParams.get("body").asText();
+
+                        // 실제 이메일 발송 로직 (예: JavaMailSender 사용)
+                        // emailService.send(to, subject, body);
+
+                        success = true;
+                        message = "이메일 발송 성공";
+                    } catch (IOException e) {
+                        throw new RuntimeException("이메일 파라미터 파싱 실패", e);
+                    }
                     break;
                 case "WEBHOOK":
                     // 외부 시스템으로 HTTP POST 요청 (예: context 에서 URL, payload 추출)
-                    // output = webhookService.sendWebhook(...);
                     success = true;
                     message = "웹훅 호출 성공";
                     break;
                 case "LOG":
                     // 시스템 로그 기록 (예: context 에서 로그 메시지 추출)
-                    // output = logService.writeLog(...);
                     success = true;
                     message = "로그 기록 성공";
-                    break;
-                case "NOTIFICATION":
-                    // 사내/외부 알림 시스템 연동 (예: context 에서 알림 대상, 메시지 추출)
-                    // output = notificationService.sendNotification(...);
-                    success = true;
-                    message = "알림 전송 성공";
                     break;
                 case "COMFORT_NOTIFICATION":
                     // context 에서 필요한 정보 추출
                     String location = (String) context.get("location");
+                    LocalDateTime currentTime = LocalDateTime.now();
                     Double comfortIndex = (Double) context.get("comfortIndex");
                     String comfortGrade = (String) context.get("comfortGrade");
 
                     // DTO 생성 및 데이터 설정
                     ComfortInfoDTO comfortInfo = new ComfortInfoDTO(
                             location,
+                            currentTime,
                             comfortIndex,
                             comfortGrade
                     );
-
-                    // 실제 알림 로직 구현
-                    // notificationService.sendComfortNotification(comfortInfo);
 
                     success = true;
                     message = "쾌적도 알림 전송 성공";
@@ -134,15 +142,15 @@ public class ActionServiceImpl implements ActionService {
             }
         } catch (Exception e) {
             message = "액션 실행 중 오류: " + e.getMessage();
-            output = null;
         }
 
-        return ActionResult.ofNewActionResult(
+        return new ActionResult(
                 action.getActNo(),
                 success,
                 action.getActType(),
                 message,
-                output
+                output,
+                LocalDateTime.now()
         );
     }
 
@@ -154,14 +162,8 @@ public class ActionServiceImpl implements ActionService {
         // 2. 각 액션 실행 후 결과 수집
         List<ActionResult> results = new ArrayList<>();
         for (Action action : actions) {
-            // 우선순위에 따라 정렬하거나 처리할 수 있음
             ActionResult result = performAction(action.getActNo(), context);
             results.add(result);
-
-            // 선택적: 액션 실행 실패 시 중단 옵션
-            // if (!result.isSuccess() && rule.isStopOnFailure()) {
-            //     break;
-            // }
         }
 
         return results;

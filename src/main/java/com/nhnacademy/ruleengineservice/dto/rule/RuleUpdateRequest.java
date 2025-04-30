@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.dto.rule;
 
+import lombok.Value;
+
 /**
  * 규칙(Rule) 수정 요청을 위한 DTO 클래스입니다.
  * <p>
@@ -15,49 +17,25 @@ package com.nhnacademy.ruleengineservice.dto.rule;
  *
  * @author 강승우
  */
+@Value
 public class RuleUpdateRequest {
 
     /**
      * 수정할 규칙의 이름입니다.
      * rules 테이블의 rule_name 컬럼과 매핑됩니다.
      */
-    private final String ruleName;
+    String ruleName;
 
     /**
      * 수정할 규칙의 상세 설명입니다.
      * rules 테이블의 rule_description 컬럼과 매핑됩니다.
      */
-    private final String ruleDescription;
+    String ruleDescription;
 
     /**
      * 수정할 규칙의 우선순위입니다.
      * 숫자가 낮을수록 높은 우선순위를 가집니다.
      * rules 테이블의 rule_priority 컬럼과 매핑됩니다.
      */
-    private final Integer rulePriority;
-
-    /**
-     * 모든 필드를 초기화하는 생성자입니다.
-     *
-     * @param ruleName        규칙 이름
-     * @param ruleDescription 규칙 설명
-     * @param rulePriority    규칙 우선순위
-     */
-    public RuleUpdateRequest(String ruleName, String ruleDescription, Integer rulePriority) {
-        this.ruleName = ruleName;
-        this.ruleDescription = ruleDescription;
-        this.rulePriority = rulePriority;
-    }
-
-    public String getRuleName() {
-        return ruleName;
-    }
-
-    public String getRuleDescription() {
-        return ruleDescription;
-    }
-
-    public Integer getRulePriority() {
-        return rulePriority;
-    }
+    Integer rulePriority;
 }

@@ -1,7 +1,6 @@
 package com.nhnacademy.ruleengineservice.service.condition.impl;
 
 import com.nhnacademy.ruleengineservice.domain.condition.Condition;
-import com.nhnacademy.ruleengineservice.domain.parameter.RuleParameter;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
@@ -10,11 +9,13 @@ import com.nhnacademy.ruleengineservice.exception.condition.ConditionNotFoundExc
 import com.nhnacademy.ruleengineservice.repository.condition.ConditionRepository;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+@Slf4j
 @Service
 @Transactional
 public class ConditionServiceImpl implements ConditionService {
@@ -142,10 +143,6 @@ public class ConditionServiceImpl implements ConditionService {
                 } catch (Exception e) {
                     return false;
                 }
-            case "IS_NULL":
-                return factValue.toString().isEmpty();
-            case "IS_NOT_NULL":
-                return !factValue.toString().isEmpty();
             default:
                 return false;
         }

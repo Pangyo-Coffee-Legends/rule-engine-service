@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.dto.condition;
 
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotNull;
+import lombok.Value;
 
 /**
  * 조건(Condition) 등록 요청을 위한 DTO 클래스입니다.
@@ -22,6 +23,7 @@ import jakarta.validation.constraints.NotNull;
  *
  * @author 강승우
  */
+@Value
 public class ConditionRegisterRequest {
 
     /**
@@ -29,7 +31,7 @@ public class ConditionRegisterRequest {
      * conditions 테이블의 rule_no 컬럼과 매핑되며, rules 테이블을 참조합니다.
      */
     @NotNull(message = "규칙 이름은 필수 항목입니다.")
-    private Long ruleNo;
+    Long ruleNo;
 
     /**
      * 조건의 비교 연산자 유형입니다.
@@ -37,7 +39,7 @@ public class ConditionRegisterRequest {
      * conditions 테이블의 con_type 컬럼과 매핑됩니다.
      */
     @NotNull(message = "조건 비교 타입은 필수 항목입니다.")
-    private String conType;
+    String conType;
 
     /**
      * 조건이 적용될 필드명입니다.
@@ -45,7 +47,7 @@ public class ConditionRegisterRequest {
      * conditions 테이블의 con_field 컬럼과 매핑됩니다.
      */
     @NotNull(message = "조건이 적용될 필드명은 필수 항목 입니다.")
-    private String conField;
+    String conField;
 
     /**
      * 조건 비교에 사용될 값입니다.
@@ -53,7 +55,7 @@ public class ConditionRegisterRequest {
      * conditions 테이블의 con_value 컬럼과 매핑됩니다.
      */
     @NotNull(message = "비교할 값은 필수 항목입니다.")
-    private String conValue;
+    String conValue;
 
     /**
      * 조건의 우선순위입니다.
@@ -62,42 +64,5 @@ public class ConditionRegisterRequest {
      * conditions 테이블의 con_priority 컬럼과 매핑됩니다.
      */
     @Column(nullable = false)
-    private Integer conPriority;
-
-    /**
-     * 모든 필드를 초기화하는 생성자입니다.
-     *
-     * @param ruleNo 조건이 속할 규칙의 식별자
-     * @param conType 조건 비교 연산자 유형
-     * @param conField 조건이 적용될 필드명
-     * @param conValue 비교할 값
-     * @param conPriority 조건 우선순위
-     */
-    public ConditionRegisterRequest(Long ruleNo, String conType, String conField, String conValue, Integer conPriority) {
-        this.ruleNo = ruleNo;
-        this.conType = conType;
-        this.conField = conField;
-        this.conValue = conValue;
-        this.conPriority = conPriority;
-    }
-
-    public Long getRuleNo() {
-        return ruleNo;
-    }
-
-    public String getConType() {
-        return conType;
-    }
-
-    public String getConField() {
-        return conField;
-    }
-
-    public String getConValue() {
-        return conValue;
-    }
-
-    public Integer getConPriority() {
-        return conPriority;
-    }
+    Integer conPriority;
 }

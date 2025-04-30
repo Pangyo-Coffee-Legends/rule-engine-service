@@ -8,7 +8,6 @@ import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
 import com.nhnacademy.ruleengineservice.exception.condition.ConditionNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.repository.condition.ConditionRepository;
-import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
 import com.nhnacademy.ruleengineservice.service.rule.impl.RuleServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -87,9 +86,7 @@ class ConditionServiceImplTest {
         when(ruleService.getRuleEntity(nonExistentRuleNo))
                 .thenThrow(new RuleNotFoundException(nonExistentRuleNo));
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            conditionService.registerCondition(request);
-        });
+        assertThrows(RuleNotFoundException.class, () -> conditionService.registerCondition(request));
 
         verify(conditionRepository, Mockito.never()).save(Mockito.any());
     }
@@ -112,9 +109,7 @@ class ConditionServiceImplTest {
         Long nonExistentConditionNo = 999L;
         when(conditionRepository.existsById(nonExistentConditionNo)).thenReturn(false);
 
-        assertThrows(ConditionNotFoundException.class, () -> {
-            conditionService.deleteCondition(nonExistentConditionNo);
-        });
+        assertThrows(ConditionNotFoundException.class, () -> conditionService.deleteCondition(nonExistentConditionNo));
         verify(conditionRepository, Mockito.never()).deleteById(Mockito.anyLong());
     }
 
@@ -157,9 +152,7 @@ class ConditionServiceImplTest {
         Long nonExistentConditionNo = 1235L;
         when(conditionRepository.findById(nonExistentConditionNo)).thenReturn(Optional.empty());
 
-        assertThrows(ConditionNotFoundException.class, () -> {
-            conditionService.getCondition(nonExistentConditionNo);
-        });
+        assertThrows(ConditionNotFoundException.class, () -> conditionService.getCondition(nonExistentConditionNo));
     }
 
     @Test
@@ -264,6 +257,97 @@ class ConditionServiceImplTest {
     }
 
     @Test
+    @DisplayName("조건 평가 - NE(Not Equal) 성공")
+    void evaluateCondition_NE_success() {
+        Long conditionNo = 1L;
+        Map<String, Object> facts = new HashMap<>();
+        facts.put("status", "active");
+
+        Rule rule = Mockito.mock();
+
+        Condition condition = Condition.ofNewCondition(rule, "NE", "status", "inactive", 1);
+
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.of(condition));
+
+        boolean result = conditionService.evaluateCondition(conditionNo, facts);
+
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("조건 평가 - GTE(Greater Than or Equal) 성공")
+    void evaluateCondition_GTE_success() {
+        Long conditionNo = 1L;
+        Map<String, Object> facts = new HashMap<>();
+        facts.put("age", "30");
+
+        Rule rule = Mockito.mock();
+
+        Condition condition = Condition.ofNewCondition(rule, "GTE", "age", "30", 1);
+
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.of(condition));
+
+        boolean result = conditionService.evaluateCondition(conditionNo, facts);
+
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("조건 평가 - 숫자 변환 실패 시 false 반환")
+    void evaluateCondition_numberFormatException_returnsFalse() {
+        Long conditionNo = 1L;
+        Map<String, Object> facts = new HashMap<>();
+        facts.put("price", "one_hundred");
+
+        Rule rule = Mockito.mock();
+
+        Condition condition = Condition.ofNewCondition(rule, "GT", "price", "50", 1);
+
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.of(condition));
+
+        boolean result = conditionService.evaluateCondition(conditionNo, facts);
+
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("BETWEEN 조건 - 잘못된 형식의 값 처리")
+    void evaluateCondition_BETWEEN_invalidFormat() {
+        // given
+        Long conditionNo = 1L;
+        Map<String, Object> facts = new HashMap<>();
+        facts.put("score", "85");
+
+        Rule rule = Mockito.mock();
+
+        Condition condition = Condition.ofNewCondition(rule, "BETWEEN", "score", "invalid_format", 1);
+
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.of(condition));
+
+        // when
+        boolean result = conditionService.evaluateCondition(conditionNo, facts);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("getRequiredFieldsByRule - 중복 필드 제거 확인")
+    void getRequiredFieldsByRule_duplicateFields() {
+        Rule rule = Mockito.mock();
+
+        Condition condition1 = Condition.ofNewCondition(rule, "EQ", "temperature", "25", 1);
+        Condition condition2 = Condition.ofNewCondition(rule, "GT", "temperature", "30", 1);
+
+        when(conditionRepository.findByRule(rule)).thenReturn(List.of(condition1, condition2));
+
+        List<String> fields = conditionService.getRequiredFieldsByRule(rule);
+
+        assertEquals(1, fields.size());
+        assertEquals("temperature", fields.get(0));
+    }
+
+    @Test
     @DisplayName("필드가 존재하지 않는 조건 평가 시 false 반환")
     void evaluateCondition_withNonExistentField_returnsFalse() {
         Long conditionNo = 1L;
@@ -311,9 +395,7 @@ class ConditionServiceImplTest {
         Long nonExistentConditionNo = 9126L;
         when(conditionRepository.findById(nonExistentConditionNo)).thenReturn(Optional.empty());
 
-        assertThrows(ConditionNotFoundException.class, () -> {
-            conditionService.getConditionEntity(nonExistentConditionNo);
-        });
+        assertThrows(ConditionNotFoundException.class, () -> conditionService.getConditionEntity(nonExistentConditionNo));
 
         verify(conditionRepository).findById(nonExistentConditionNo);
     }

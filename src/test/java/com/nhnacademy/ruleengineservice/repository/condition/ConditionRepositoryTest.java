@@ -47,7 +47,6 @@ class ConditionRepositoryTest {
     @DisplayName("Rule 로 Condition 조회")
     void findByRule() {
         Condition condition = Condition.ofNewCondition(rule,"EQ", "FieldA", "ValueA", 1);
-        condition.setRule(rule);
         conditionRepository.save(condition);
 
         List<Condition> found = conditionRepository.findByRule(rule);

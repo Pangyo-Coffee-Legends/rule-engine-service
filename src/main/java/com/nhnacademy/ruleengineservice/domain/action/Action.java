@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -14,6 +15,8 @@ import java.util.Map;
  * 각 액션은 타입, 파라미터, 우선순위, 생성일시 등의 정보를 포함합니다.
  */
 @Entity
+@Getter
+@Table(name = "actions")
 public class Action {
 
     /**
@@ -128,41 +131,9 @@ public class Action {
     public void postLoad() throws JsonProcessingException {
         if (actParams != null) {
             ObjectMapper mapper = new ObjectMapper();
-            this.actParamsMap = mapper.readValue(actParams, new TypeReference<Map<String, Object>>() {
+            this.actParamsMap = mapper.readValue(actParams, new TypeReference<>() {
             });
         }
-    }
-
-    public Map<String, Object> getActParamsMap() {
-        return actParamsMap;
-    }
-
-    public void setActParamsMap(Map<String, Object> actParamsMap) {
-        this.actParamsMap = actParamsMap;
-    }
-
-    public Rule getRule() {
-        return rule;
-    }
-
-    public Long getActNo() {
-        return actNo;
-    }
-
-    public String getActType() {
-        return actType;
-    }
-
-    public String getActParams() {
-        return actParams;
-    }
-
-    public Integer getActPriority() {
-        return actPriority;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
     }
 
     @Override

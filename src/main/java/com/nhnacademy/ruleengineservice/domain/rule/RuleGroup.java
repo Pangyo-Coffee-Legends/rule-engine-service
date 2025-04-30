@@ -1,6 +1,7 @@
 package com.nhnacademy.ruleengineservice.domain.rule;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.List;
  * @author 강승우
  */
 @Entity
+@Getter
 @Table(name = "rule_groups")
 public class RuleGroup {
     /**
@@ -157,38 +159,6 @@ public class RuleGroup {
      */
     public void clearRules() {
         this.ruleList.clear();
-    }
-
-    public Long getRuleGroupNo() {
-        return ruleGroupNo;
-    }
-
-    public String getRuleGroupName() {
-        return ruleGroupName;
-    }
-
-    public String getRuleGroupDescription() {
-        return ruleGroupDescription;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public Integer getPriority() {
-        return priority;
-    }
-
-    public List<Rule> getRuleList() {
-        return ruleList;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 
     public void setActive(boolean active) {

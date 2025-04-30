@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Value;
 
 /**
  * 규칙 그룹(RuleGroup) 등록 요청을 위한 DTO 클래스입니다.
@@ -23,6 +24,7 @@ import jakarta.validation.constraints.Size;
  * @author [작성자]
  * @since 2025-04-27
  */
+@Value
 public class RuleGroupRegisterRequest {
 
     /**
@@ -31,14 +33,14 @@ public class RuleGroupRegisterRequest {
      */
     @NotBlank(message = "규칙 그룹 이름은 필수 항목입니다.")
     @Column(unique = true)
-    private final String ruleGroupName;
+    String ruleGroupName;
 
     /**
      * 생성할 규칙 그룹의 상세 설명입니다.
      * rule_groups 테이블의 rule_group_description 컬럼과 매핑됩니다.
      */
     @Size(max = 200, message = "규칙 그룹 상세는 최대 200자 입니다.")
-    private final String ruleGroupDescription;
+    String ruleGroupDescription;
 
     /**
      * 규칙 그룹의 우선순위입니다.
@@ -46,30 +48,5 @@ public class RuleGroupRegisterRequest {
      * rule_groups 테이블의 priority 컬럼과 매핑됩니다.
      */
     @NotNull(message = "규칙 그룹 우선순위는 필수 항목입니다.")
-    private final Integer priority;
-
-    /**
-     * 모든 필드를 초기화하는 생성자입니다.
-     *
-     * @param ruleGroupName        규칙 그룹명
-     * @param ruleGroupDescription 규칙 그룹 설명
-     * @param priority             우선순위
-     */
-    public RuleGroupRegisterRequest(String ruleGroupName, String ruleGroupDescription, Integer priority) {
-        this.ruleGroupName = ruleGroupName;
-        this.ruleGroupDescription = ruleGroupDescription;
-        this.priority = priority;
-    }
-
-    public String getRuleGroupName() {
-        return ruleGroupName;
-    }
-
-    public String getRuleGroupDescription() {
-        return ruleGroupDescription;
-    }
-
-    public Integer getPriority() {
-        return priority;
-    }
+    Integer priority;
 }

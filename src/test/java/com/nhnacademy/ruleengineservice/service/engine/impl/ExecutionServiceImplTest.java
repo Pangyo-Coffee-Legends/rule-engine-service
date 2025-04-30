@@ -15,6 +15,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ class ExecutionServiceImplTest {
         Map<String, Object> context = new HashMap<>();
         context.put("recipient", "test@example.com");
 
-        ActionResult actionResult = ActionResult.ofNewActionResult(1L, true, "EMAIL", "이메일 발송 성공", null);
+        ActionResult actionResult = new ActionResult(1L, true, "EMAIL", "이메일 발송 성공", null, LocalDateTime.now());
 
         when(actionService.performAction(action.getActNo(), context)).thenReturn(actionResult);
 
@@ -84,10 +85,10 @@ class ExecutionServiceImplTest {
         Map<String, Object> facts = new HashMap<>();
         facts.put("temperature", 30);
 
-        ActionResult result1 = ActionResult.ofNewActionResult(
-                1L, true, "EMAIL", "이메일 발송 성공", null);
-        ActionResult result2 = ActionResult.ofNewActionResult(
-                2L, true, "SMS", "SMS 발송 성공", null);
+        ActionResult result1 = new ActionResult(
+                1L, true, "EMAIL", "이메일 발송 성공", null, LocalDateTime.now());
+        ActionResult result2 = new ActionResult(
+                2L, true, "SMS", "SMS 발송 성공", null, LocalDateTime.now());
 
         when(actionService.performAction(1L, facts)).thenReturn(result1);
         when(actionService.performAction(2L, facts)).thenReturn(result2);
@@ -117,8 +118,8 @@ class ExecutionServiceImplTest {
 
         Map<String, Object> context = new HashMap<>();
 
-        ActionResult failedResult = ActionResult.ofNewActionResult(
-                1L, false, "EMAIL", "이메일 발송 실패: 수신자 없음", null);
+        ActionResult failedResult = new ActionResult(
+                1L, false, "EMAIL", "이메일 발송 실패: 수신자 없음", null, LocalDateTime.now());
 
         when(actionService.performAction(action.getActNo(), context)).thenReturn(failedResult);
 

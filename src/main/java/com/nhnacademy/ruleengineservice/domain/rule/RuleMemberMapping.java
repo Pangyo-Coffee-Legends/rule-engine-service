@@ -1,12 +1,14 @@
 package com.nhnacademy.ruleengineservice.domain.rule;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 /**
  * RuleMemberMapping 엔티티는 규칙과 멤버(사용자) 간의 매핑 정보를 저장합니다.
  * 한 규칙에 여러 멤버가 연결될 수 있고, 한 멤버가 여러 규칙에 연결될 수 있습니다.
  */
 @Entity
+@Getter
 @Table(name = "rule_member_mappings")
 public class RuleMemberMapping {
 
@@ -57,18 +59,6 @@ public class RuleMemberMapping {
      */
     public static RuleMemberMapping ofNewRuleMemberMapping(Rule rule, Long mbNo) {
         return new RuleMemberMapping(rule, mbNo);
-    }
-
-    public Long getMappingNo() {
-        return mappingNo;
-    }
-
-    public Rule getRule() {
-        return rule;
-    }
-
-    public Long getMbNo() {
-        return mbNo;
     }
 
     @Override

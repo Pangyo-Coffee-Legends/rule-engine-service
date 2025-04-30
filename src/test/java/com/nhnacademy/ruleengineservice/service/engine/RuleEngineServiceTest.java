@@ -1,7 +1,5 @@
 package com.nhnacademy.ruleengineservice.service.engine;
 
-import com.nhnacademy.ruleengineservice.domain.action.Action;
-import com.nhnacademy.ruleengineservice.domain.condition.Condition;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.domain.trigger.TriggerEvent;
@@ -9,9 +7,6 @@ import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResult;
 import com.nhnacademy.ruleengineservice.dto.engine.RuleEvaluationResult;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
-import com.nhnacademy.ruleengineservice.repository.action.ActionRepository;
-import com.nhnacademy.ruleengineservice.repository.condition.ConditionRepository;
-import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
 import com.nhnacademy.ruleengineservice.repository.trigger.TriggerRepository;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
@@ -26,7 +21,10 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -66,7 +64,7 @@ class RuleEngineServiceTest {
         // 룰 설정
         RuleGroup ruleGroup = Mockito.mock();
         Rule rule = Rule.ofNewRule(ruleGroup, "쾌적도 알림 룰","설명", 1);
-        setField(rule,"ruleNo", 1L);
+        setField(rule,"ruleNo");
 
         // 트리거 설정
         TriggerEvent trigger = TriggerEvent.ofNewTriggerEvent(rule, eventType, eventParams);
@@ -78,8 +76,8 @@ class RuleEngineServiceTest {
         ConditionResult conditionResult = new ConditionResult(1L, "comfort", "LT", "60", true);
         List<ConditionResult> conditionResults = List.of(conditionResult);
 
-        ActionResult actionResult = ActionResult.ofNewActionResult(
-                1L, true, "NOTIFICATION", "쾌적도 알림 전송 성공", null);
+        ActionResult actionResult = new ActionResult(
+                1L, true, "NOTIFICATION", "쾌적도 알림 전송 성공", null, LocalDateTime.now());
         List<ActionResult> actionResults = List.of(actionResult);
 
         // Mock 설정
@@ -119,7 +117,7 @@ class RuleEngineServiceTest {
 
         RuleGroup ruleGroup = Mockito.mock();
         Rule rule = Rule.ofNewRule(ruleGroup, "쾌적도 알림 룰","설명", 1);
-        setField(rule,"ruleNo", 1L);
+        setField(rule,"ruleNo");
 
         TriggerEvent trigger = TriggerEvent.ofNewTriggerEvent(rule, eventType, eventParams);
         List<TriggerEvent> triggers = List.of(trigger);
@@ -156,7 +154,7 @@ class RuleEngineServiceTest {
     void evaluateAndExecuteRule_withMissingRequiredField_throwsException() {
         RuleGroup ruleGroup = Mockito.mock();
         Rule rule = Rule.ofNewRule(ruleGroup, "쾌적도 알림 룰","설명", 1);
-        setField(rule,"ruleNo", 1L);
+        setField(rule,"ruleNo");
 
         Map<String, Object> facts = new HashMap<>();
         facts.put("location", "1");
@@ -166,9 +164,7 @@ class RuleEngineServiceTest {
 
         when(conditionService.getRequiredFieldsByRule(rule)).thenReturn(requiredFields);
 
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            ruleEngineService.evaluateAndExecuteRule(rule, facts);
-        });
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> ruleEngineService.evaluateAndExecuteRule(rule, facts));
 
         assertTrue(exception.getMessage().contains("필수 데이터 누락: comfort"));
         verify(conditionService).getRequiredFieldsByRule(rule);
@@ -188,14 +184,14 @@ class RuleEngineServiceTest {
 
         RuleGroup ruleGroup = Mockito.mock();
         Rule rule = Rule.ofNewRule(ruleGroup, "쾌적도 알림 룰","설명", 1);
-        setField(rule,"ruleNo", 1L);
+        setField(rule,"ruleNo");
 
         List<String> requiredFields = List.of("comfort", "location");
         ConditionResult conditionResult = new ConditionResult(1L, "comfort", "LT", "60", true);
         List<ConditionResult> conditionResults = List.of(conditionResult);
 
-        ActionResult actionResult = ActionResult.ofNewActionResult(
-                1L, true, "EMAIL", "이메일 발송 성공", null);
+        ActionResult actionResult = new ActionResult(
+                1L, true, "EMAIL", "이메일 발송 성공", null, LocalDateTime.now());
         List<ActionResult> actionResults = List.of(actionResult);
 
         when(ruleService.getRuleEntity(ruleNo)).thenReturn(rule);
@@ -228,19 +224,17 @@ class RuleEngineServiceTest {
                 .thenThrow(new RuleNotFoundException(nonExistentRuleNo));
 
         // when & then
-        assertThrows(RuleNotFoundException.class, () -> {
-            ruleEngineService.executeRule(nonExistentRuleNo, facts);
-        });
+        assertThrows(RuleNotFoundException.class, () -> ruleEngineService.executeRule(nonExistentRuleNo, facts));
 
         verify(ruleService).getRuleEntity(nonExistentRuleNo);
         verify(conditionService, never()).getRequiredFieldsByRule(any());
     }
 
-    private void setField(Object target, String fieldName, Object value) {
+    private void setField(Object target, String fieldName) {
         try {
             Field field = target.getClass().getDeclaredField(fieldName);
             field.setAccessible(true);
-            field.set(target, value);
+            field.set(target, 1L);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
