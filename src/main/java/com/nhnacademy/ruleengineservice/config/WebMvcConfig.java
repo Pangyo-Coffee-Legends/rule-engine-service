@@ -23,7 +23,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-//        WebMvcConfigurer.super.addCorsMappings(registry);
         registry.addMapping("/**")
                 .allowedOrigins("*") // 우리 도메인 설정
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 기타 들어갈 method
