@@ -6,29 +6,32 @@ import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
-import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
 import com.nhnacademy.ruleengineservice.exception.action.ActionNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
+import com.nhnacademy.ruleengineservice.handler.ActionHandler;
+import com.nhnacademy.ruleengineservice.registry.ActionHandlerRegistry;
 import com.nhnacademy.ruleengineservice.repository.action.ActionRepository;
 import com.nhnacademy.ruleengineservice.service.rule.impl.RuleServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @Slf4j
-@DataJpaTest
 @ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class ActionServiceImplTest {
 
     @Mock
@@ -36,6 +39,9 @@ class ActionServiceImplTest {
 
     @Mock
     private ActionRepository actionRepository;
+
+    @Mock
+    private ActionHandlerRegistry actionHandlerRegistry;
 
     @InjectMocks
     private ActionServiceImpl actionService;
@@ -164,107 +170,61 @@ class ActionServiceImplTest {
     }
 
     @Test
-    @DisplayName("액션 실행 - EMAIL 성공 (유효한 파라미터)")
-    void performAction_EMAIL_success() {
-        // Given
+    @DisplayName("액션이 존재하지 않음")
+    void performAction_whenActionNotFound_shouldThrowException() {
         Long actionNo = 1L;
-        Map<String, Object> context = new HashMap<>();
+        Map<String, Object> context = Map.of();
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.empty());
 
-        // 유효한 JSON 파라미터 생성
-        String validJsonParams = "{\"to\":\"test@example.com\",\"subject\":\"Test Subject\",\"body\":\"Test Body\"}";
-
-        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
-        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
-
-        Action mockAction = Action.ofNewAction(mockRule, "EMAIL", validJsonParams, 1);
-        setField(mockAction, "actNo", actionNo);
-
-        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
-
-        // When
-        ActionResult result = actionService.performAction(actionNo, context);
-
-        // Then
-        assertAll(
-                () -> assertTrue(result.isSuccess()),
-                () -> assertEquals("EMAIL", result.getActType()),
-                () -> assertEquals("이메일 발송 성공", result.getMessage()),
-                () -> assertNull(result.getOutput()) // 이메일은 output 없음
-        );
-
-        log.info("이메일 발송 결과: {}", result);
-    }
-
-
-    @Test
-    @DisplayName("액션 실행 - WEBHOOK 성공")
-    void performAction_WEBHOOK_success() {
-        Long actionNo = 1L;
-        Map<String, Object> context = new HashMap<>();
-        context.put("url", "http://example.com/webhook");
-
-        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
-        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
-        Action mockAction = Action.ofNewAction(mockRule, "WEBHOOK", "{}", 1);
-        setField(mockAction, "actNo", actionNo);
-
-        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
-
-        ActionResult result = actionService.performAction(actionNo, context);
-
-        assertTrue(result.isSuccess());
-        assertAll(
-                () -> assertEquals("WEBHOOK", result.getActType()),
-                () -> assertEquals("웹훅 호출 성공", result.getMessage())
-        );
+        assertThrows(ActionNotFoundException.class, () -> actionService.performAction(actionNo, context));
     }
 
     @Test
-    @DisplayName("액션 실행 - LOG 성공")
-    void performAction_LOG_success() {
+    @DisplayName("performAction 성공")
+    void performAction_whenHandlerSucceeds_shouldReturnSuccessResult() {
         Long actionNo = 1L;
-        Map<String, Object> context = new HashMap<>();
-        context.put("message", "Test log message");
+        Action action = mock();
 
-        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
-        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
-        Action mockAction = Action.ofNewAction(mockRule, "LOG", "{}", 1);
-        setField(mockAction, "actNo", actionNo);
+        when(action.getActType()).thenReturn("EMAIL");
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(action));
 
-        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
-
-        ActionResult result = actionService.performAction(actionNo, context);
-
-        assertTrue(result.isSuccess());
-        assertAll(
-                () -> assertEquals("LOG", result.getActType()),
-                () -> assertEquals("로그 기록 성공", result.getMessage())
+        ActionHandler handler = mock();
+        Map<String, Object> context = Map.of();
+        ActionResult expectedResult = new ActionResult(
+                actionNo,
+                true,
+                "EMAIL",
+                "이메일 전송 성공",
+                null,
+                LocalDateTime.now()
         );
+
+        when(actionHandlerRegistry.getHandler("EMAIL")).thenReturn(handler);
+        when(handler.handle(action, context)).thenReturn(expectedResult);
+
+        ActionResult actualResult = actionService.performAction(actionNo, context);
+
+        assertEquals(expectedResult.getActNo(), actualResult.getActNo());
+        verify(handler).handle(action, context);
     }
 
     @Test
-    @DisplayName("액션 실행 - COMFORT_NOTIFICATION 성공")
-    void performAction_COMFORT_NOTIFICATION_success() {
+    @DisplayName("핸들러 실행 중 예외 발생시 실패 결과 반환")
+    void performAction_whenHandlerThrowsException_shouldReturnFailureResult() {
         Long actionNo = 1L;
-        Map<String, Object> context = new HashMap<>();
-        context.put("location", "Room 101");
-        context.put("comfortIndex", 75.5);
-        context.put("comfortGrade", "Good");
+        Action action = mock();
 
-        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
-        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
-        Action mockAction = Action.ofNewAction(mockRule, "COMFORT_NOTIFICATION", "{}", 1);
-        setField(mockAction, "actNo", actionNo);
+        when(action.getActType()).thenReturn("WEBHOOK");
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(action));
 
-        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
+        ActionHandler handler = mock(ActionHandler.class);
+        when(actionHandlerRegistry.getHandler("WEBHOOK")).thenReturn(handler);
+        when(handler.handle(action, Map.of())).thenThrow(new RuntimeException("외부 API 실패"));
 
-        ActionResult result = actionService.performAction(actionNo, context);
+        ActionResult result = actionService.performAction(actionNo, Map.of());
 
-        assertTrue(result.isSuccess());
-        assertEquals("COMFORT_NOTIFICATION", result.getActType());
-        assertEquals("쾌적도 알림 전송 성공", result.getMessage());
-        assertNotNull(result.getOutput());
-        assertInstanceOf(ComfortInfoDTO.class, result.getOutput());
+        assertFalse(result.isSuccess());
+        assertEquals("액션 실행 중 오류: 외부 API 실패", result.getMessage());
     }
 
     @Test
@@ -319,21 +279,18 @@ class ActionServiceImplTest {
     @DisplayName("액션 실행 - 지원하지 않는 타입")
     void performAction_unsupportedType() {
         Long actionNo = 1L;
-        Map<String, Object> context = new HashMap<>();
+        Action action = mock();
 
-        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
-        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
+        when(action.getActType()).thenReturn("INVALID_TYPE");
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(action));
 
-        Action mockAction = Action.ofNewAction(mockRule, "UNKNOWN_TYPE", "{}", 1);
-        setField(mockAction, "actNo", actionNo);
+        when(actionHandlerRegistry.getHandler("INVALID_TYPE"))
+                .thenThrow(new UnsupportedOperationException("지원하지 않는 타입"));
 
-        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
-
-        ActionResult result = actionService.performAction(actionNo, context);
+        ActionResult result = actionService.performAction(actionNo, Map.of());
 
         assertFalse(result.isSuccess());
-        assertEquals("UNKNOWN_TYPE", result.getActType());
-        assertEquals("지원하지 않는 액션 타입", result.getMessage());
+        assertEquals("액션 실행 중 오류: 지원하지 않는 타입", result.getMessage());
     }
 
     private void setField(Object target, String fieldName, Object value) {

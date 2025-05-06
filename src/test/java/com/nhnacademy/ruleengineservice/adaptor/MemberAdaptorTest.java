@@ -72,7 +72,8 @@ class MemberAdaptorTest {
             {
                 "no": 98,
                 "roleName": "ROLE_USER",
-                "name": "Seungeu Kang"
+                "name": "Seungeu Kang",
+                "email": "seungeu@example.com"
             }
             """;
 

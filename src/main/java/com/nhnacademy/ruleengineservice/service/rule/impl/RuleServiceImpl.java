@@ -1,24 +1,35 @@
 package com.nhnacademy.ruleengineservice.service.rule.impl;
 
+import com.nhnacademy.ruleengineservice.adaptor.MemberAdaptor;
+import com.nhnacademy.ruleengineservice.auth.MemberThreadLocal;
 import com.nhnacademy.ruleengineservice.domain.action.Action;
 import com.nhnacademy.ruleengineservice.domain.condition.Condition;
 import com.nhnacademy.ruleengineservice.domain.parameter.RuleParameter;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleMemberMapping;
 import com.nhnacademy.ruleengineservice.domain.schedule.RuleSchedule;
 import com.nhnacademy.ruleengineservice.domain.trigger.TriggerEvent;
+import com.nhnacademy.ruleengineservice.dto.member.MemberResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleUpdateRequest;
+import com.nhnacademy.ruleengineservice.exception.member.MemberNotFoundException;
+import com.nhnacademy.ruleengineservice.exception.member.UnauthorizedException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
+import com.nhnacademy.ruleengineservice.exception.rule.RulePersistException;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
+import com.nhnacademy.ruleengineservice.repository.rule.RuleMemberMappingRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -28,16 +39,38 @@ public class RuleServiceImpl implements RuleService {
 
     private final RuleRepository ruleRepository;
 
-    public RuleServiceImpl(RuleGroupRepository ruleGroupRepository,
-                           RuleRepository ruleRepository) {
+    private final RuleMemberMappingRepository ruleMemberMappingRepository;
+
+    private final MemberAdaptor memberAdaptor;
+
+    public RuleServiceImpl(
+            RuleGroupRepository ruleGroupRepository,
+            RuleRepository ruleRepository,
+            RuleMemberMappingRepository ruleMemberMappingRepository,
+            MemberAdaptor memberAdaptor
+    ) {
         this.ruleGroupRepository = ruleGroupRepository;
         this.ruleRepository = ruleRepository;
+        this.ruleMemberMappingRepository = ruleMemberMappingRepository;
+        this.memberAdaptor = memberAdaptor;
     }
 
     @Override
     public RuleResponse registerRule(RuleRegisterRequest request) {
+        String email = MemberThreadLocal.getMemberEmail();
+
+        if (Objects.isNull(email) || email.isBlank()) {
+            throw new UnauthorizedException("로그인이 필요합니다.");
+        }
+
         RuleGroup ruleGroup = ruleGroupRepository.findById(request.getRuleGroupNo())
                 .orElseThrow(() -> new RuleGroupNotFoundException(request.getRuleGroupNo()));
+
+        ResponseEntity<MemberResponse> response = memberAdaptor.getMemberByEmail(email);
+
+        if (response == null || response.getBody() == null) {
+            throw new MemberNotFoundException(email);
+        }
 
         Rule rule = Rule.ofNewRule(
                 ruleGroup,
@@ -45,6 +78,19 @@ public class RuleServiceImpl implements RuleService {
                 request.getRuleDescription(),
                 request.getRulePriority()
         );
+
+        MemberResponse memberResponse = response.getBody();
+
+        try {
+            ruleMemberMappingRepository.save(
+                    RuleMemberMapping.ofNewRuleMemberMapping(
+                            rule,
+                            memberResponse.getNo()
+                    )
+            );
+        } catch (DataAccessException e) {
+            throw new RulePersistException("rule member mapping failed : " + e);
+        }
 
         return toRuleResponse(ruleRepository.save(rule));
     }

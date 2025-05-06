@@ -1,16 +1,22 @@
 package com.nhnacademy.ruleengineservice.service.rule.impl;
 
+import com.nhnacademy.ruleengineservice.adaptor.MemberAdaptor;
+import com.nhnacademy.ruleengineservice.auth.MemberThreadLocal;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleMemberMapping;
+import com.nhnacademy.ruleengineservice.dto.member.MemberResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleUpdateRequest;
+import com.nhnacademy.ruleengineservice.exception.member.MemberNotFoundException;
+import com.nhnacademy.ruleengineservice.exception.member.UnauthorizedException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
-import com.nhnacademy.ruleengineservice.repository.parameter.RuleParameterRepository;
+import com.nhnacademy.ruleengineservice.exception.rule.RulePersistException;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
+import com.nhnacademy.ruleengineservice.repository.rule.RuleMemberMappingRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
-import com.nhnacademy.ruleengineservice.repository.trigger.TriggerRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,8 +24,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -41,10 +49,10 @@ class RuleServiceImplTest {
     private RuleRepository ruleRepository;
 
     @Mock
-    private RuleParameterRepository ruleParameterRepository;
+    private RuleMemberMappingRepository ruleMemberMappingRepository;
 
     @Mock
-    private TriggerRepository triggerRepository;
+    private MemberAdaptor memberAdaptor;
 
     @InjectMocks
     private RuleServiceImpl ruleService;
@@ -52,12 +60,17 @@ class RuleServiceImplTest {
     @Test
     @DisplayName("규칙 등록 성공")
     void registerRule() {
+        String email = "user@test.com";
+        MemberThreadLocal.setMemberEmail(email);
+
         Long ruleGroupNo = 1L;
         String ruleName = "test rule";
         String ruleDescription = "test description";
         Integer rulePriority = 1;
 
-        RuleRegisterRequest request = new RuleRegisterRequest(ruleGroupNo, ruleName, ruleDescription, rulePriority);
+        RuleRegisterRequest request = new RuleRegisterRequest(
+                ruleGroupNo, ruleName, ruleDescription, rulePriority
+        );
 
         RuleGroup group = RuleGroup.ofNewRuleGroup("test g", "des d", 2);
         setField(group, "ruleGroupNo", 1L);
@@ -65,13 +78,31 @@ class RuleServiceImplTest {
         Rule rule = Rule.ofNewRule(group, ruleName, ruleDescription, rulePriority);
         setField(rule, "ruleNo", 10L);
 
+        MemberResponse memberResponse = new MemberResponse(
+                2L,
+                "ROLE_USER",
+                "user",
+                email,
+                "pass",
+                "010-1234-5678"
+        );
+
+        RuleMemberMapping ruleMemberMapping = RuleMemberMapping.ofNewRuleMemberMapping(
+                rule,
+                memberResponse.getNo()
+        );
+
         when(ruleGroupRepository.findById(ruleGroupNo)).thenReturn(Optional.of(group));
         when(ruleRepository.save(Mockito.any())).thenReturn(rule);
+        when(memberAdaptor.getMemberByEmail(anyString())).thenReturn(ResponseEntity.ok(memberResponse));
+
+        when(ruleMemberMappingRepository.save(Mockito.any())).thenReturn(ruleMemberMapping);
 
         RuleResponse response = ruleService.registerRule(request);
         log.debug("register Rule : {}", response);
 
         assertNotNull(response);
+        assertEquals(email, memberResponse.getEmail());
         assertAll(
                 () -> assertEquals(10L, response.getRuleNo()),
                 () -> assertEquals(ruleName, response.getRuleName()),
@@ -81,29 +112,95 @@ class RuleServiceImplTest {
         );
 
         verify(ruleGroupRepository, Mockito.times(1)).findById(Mockito.anyLong());
+        verify(memberAdaptor).getMemberByEmail(email);
         verify(ruleRepository, Mockito.times(1)).save(Mockito.any());
     }
 
     @Test
-    @DisplayName("규칙 등록 실패")
+    @DisplayName("규칙 등록 실패 - MemberThreadLocal 이메일 없음")
+    void registerRule_missingEmail() {
+        MemberThreadLocal.removedMemberEmail(); // 이메일 클리어
+        RuleRegisterRequest request = new RuleRegisterRequest(1L, "Rule", "Desc", 1);
+
+        assertThrows(UnauthorizedException.class, () -> ruleService.registerRule(request));
+    }
+
+    @Test
+    @DisplayName("규칙 등록 실패 - MemberAdaptor 404 응답")
+    void registerRule_memberNotFound() {
+        String email = "invalid@test.com";
+        MemberThreadLocal.setMemberEmail(email);
+        RuleRegisterRequest request = new RuleRegisterRequest(1L, "Rule", "Desc", 1);
+
+        when(ruleGroupRepository.findById(any()))
+                .thenReturn(Optional.of(RuleGroup.ofNewRuleGroup("Group", "Desc", 1)));
+        when(memberAdaptor.getMemberByEmail(email))
+                .thenReturn(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+
+        assertThrows(MemberNotFoundException.class, () -> ruleService.registerRule(request));
+    }
+
+    @Test
+    @DisplayName("규칙 등록 실패 - 존재하지 않는 RuleGroup")
     void registerRule_exception() {
+        String email = "test@test.com";
+        MemberThreadLocal.setMemberEmail(email);
+
         Long nonGroupNo = 2314L;
 
         RuleRegisterRequest request = new RuleRegisterRequest(nonGroupNo, "테스트 그룹", "설명", 1);
 
         when(ruleGroupRepository.findById(nonGroupNo)).thenReturn(Optional.empty());
 
-        assertThrows(RuleGroupNotFoundException.class, () -> {
-            ruleService.registerRule(request);
-        });
+        assertThrows(RuleGroupNotFoundException.class, () -> ruleService.registerRule(request));
 
         verify(ruleRepository, never()).save(Mockito.any());
     }
 
     @Test
+    @DisplayName("규칙 등록 실패 - MemberAdaptor 응답 null")
+    void registerRule_memberAdaptorReturnsNull() {
+        String email = "abc@test.com";
+        MemberThreadLocal.setMemberEmail(email);
+
+        RuleRegisterRequest request = new RuleRegisterRequest(1L, "Rule", "Desc", 1);
+        RuleGroup mockGroup = RuleGroup.ofNewRuleGroup("Group", "Desc", 1);
+
+        when(ruleGroupRepository.findById(anyLong())).thenReturn(Optional.of(mockGroup));
+        when(memberAdaptor.getMemberByEmail(anyString())).thenReturn(null);
+
+        assertThrows(MemberNotFoundException.class, () -> ruleService.registerRule(request));
+    }
+
+    @Test
+    @DisplayName("규칙 등록 실패 - 매핑 저장 실패")
+    void registerRule_mappingSaveFailed() {
+        String email = "user@test.com";
+        MemberThreadLocal.setMemberEmail(email);
+
+        RuleRegisterRequest request = new RuleRegisterRequest(1L, "Rule", "Desc", 1);
+
+        when(ruleGroupRepository.findById(any()))
+                .thenReturn(Optional.of(RuleGroup.ofNewRuleGroup("Group", "Desc", 1)));
+        when(memberAdaptor.getMemberByEmail(email))
+                .thenReturn(ResponseEntity.ok(new MemberResponse(
+                        1L,
+                        "falseRule",
+                        "valid name",
+                        "user@test.com",
+                        "1234asdf!",
+                        "010-1234-6343"
+                )));
+
+        when(ruleMemberMappingRepository.save(any()))
+                .thenThrow(new DataAccessException("DB Error") {});
+
+        assertThrows(RulePersistException.class, () -> ruleService.registerRule(request));
+    }
+
+    @Test
     @DisplayName("규칙 수정 성공")
     void updateRule() {
-        // given
         Long ruleNo = 1L;
         String updatedName = "수정된 규칙";
         String updatedDescription = "수정된 설명";
@@ -119,11 +216,9 @@ class RuleServiceImplTest {
 
         when(ruleRepository.findById(ruleNo)).thenReturn(Optional.of(existingRule));
 
-        // when
         RuleResponse response = ruleService.updateRule(ruleNo, request);
         log.debug("updated rule : {}", response);
 
-        // then
         assertNotNull(response);
         assertAll(
                 () -> assertEquals(ruleNo, response.getRuleNo()),
@@ -143,9 +238,7 @@ class RuleServiceImplTest {
 
         when(ruleRepository.findById(nonExistentRuleNo)).thenReturn(Optional.empty());
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            ruleService.updateRule(nonExistentRuleNo, request);
-        });
+        assertThrows(RuleNotFoundException.class, () -> ruleService.updateRule(nonExistentRuleNo, request));
     }
 
     @Test
@@ -166,9 +259,7 @@ class RuleServiceImplTest {
         Long nonExistentRuleNo = 999L;
         when(ruleRepository.existsById(nonExistentRuleNo)).thenReturn(false);
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            ruleService.deleteRule(nonExistentRuleNo);
-        });
+        assertThrows(RuleNotFoundException.class, () -> ruleService.deleteRule(nonExistentRuleNo));
 
         verify(ruleRepository, never()).deleteById(anyLong());
     }
@@ -207,9 +298,7 @@ class RuleServiceImplTest {
         Long nonExistentRuleNo = 999L;
         when(ruleRepository.findById(nonExistentRuleNo)).thenReturn(Optional.empty());
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            ruleService.getRule(nonExistentRuleNo);
-        });
+        assertThrows(RuleNotFoundException.class, () -> ruleService.getRule(nonExistentRuleNo));
     }
 
     @Test
@@ -248,9 +337,7 @@ class RuleServiceImplTest {
     void getAllRule_exception() {
         when(ruleRepository.findAll()).thenReturn(new ArrayList<>());
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            ruleService.getAllRule();
-        });
+        assertThrows(RuleNotFoundException.class, () -> ruleService.getAllRule());
     }
 
     @Test
@@ -290,9 +377,7 @@ class RuleServiceImplTest {
         Long nonExistentGroupNo = 999L;
         when(ruleGroupRepository.findById(nonExistentGroupNo)).thenReturn(Optional.empty());
 
-        assertThrows(RuleGroupNotFoundException.class, () -> {
-            ruleService.getRulesByGroup(nonExistentGroupNo);
-        });
+        assertThrows(RuleGroupNotFoundException.class, () -> ruleService.getRulesByGroup(nonExistentGroupNo));
     }
 
     @Test
@@ -326,9 +411,7 @@ class RuleServiceImplTest {
         Long nonExistentRuleNo = 999L;
         when(ruleRepository.findById(nonExistentRuleNo)).thenReturn(Optional.empty());
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            ruleService.setRuleActive(nonExistentRuleNo, true);
-        });
+        assertThrows(RuleNotFoundException.class, () -> ruleService.setRuleActive(nonExistentRuleNo, true));
 
         verify(ruleRepository, never()).save(any(Rule.class));
     }
@@ -360,9 +443,7 @@ class RuleServiceImplTest {
         Long nonExistentRuleNo = 999L;
         when(ruleRepository.findById(nonExistentRuleNo)).thenReturn(Optional.empty());
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            ruleService.getRuleEntity(nonExistentRuleNo);
-        });
+        assertThrows(RuleNotFoundException.class, () -> ruleService.getRuleEntity(nonExistentRuleNo));
 
         verify(ruleRepository).findById(nonExistentRuleNo);
     }
