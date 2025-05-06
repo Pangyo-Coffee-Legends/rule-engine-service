@@ -8,11 +8,13 @@ import com.nhnacademy.ruleengineservice.exception.parameter.ParameterNotFoundExc
 import com.nhnacademy.ruleengineservice.repository.parameter.RuleParameterRepository;
 import com.nhnacademy.ruleengineservice.service.parameter.ParameterService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @Transactional
 public class ParameterServiceImpl implements ParameterService {
@@ -36,21 +38,27 @@ public class ParameterServiceImpl implements ParameterService {
                 request.getParamValue()
         );
 
+        log.debug("registerParameter parameter : {}", parameter);
+
         return toParameterResponse(ruleParameterRepository.save(parameter));
     }
 
     @Override
     public void deleteParameter(Long paramNo) {
         if (!ruleParameterRepository.existsById(paramNo)) {
+            log.error("deleteParameter parameter not found");
             throw new ParameterNotFoundException(paramNo);
         }
 
         ruleParameterRepository.deleteById(paramNo);
+        log.debug("deleteParameter success");
     }
 
     @Override
     @Transactional(readOnly = true)
     public ParameterResponse getParameter(Long paramNo) {
+        log.debug("getParameter start");
+
         return ruleParameterRepository.findById(paramNo)
                 .map(this::toParameterResponse)
                 .orElseThrow(() -> new ParameterNotFoundException(paramNo));
@@ -62,6 +70,8 @@ public class ParameterServiceImpl implements ParameterService {
         Rule rule = ruleService.getRuleEntity(ruleNo);
 
         List<RuleParameter> parameterList = ruleParameterRepository.findByRule(rule);
+        log.debug("getParametersByRule : {}", parameterList);
+
         return parameterList.stream()
                 .map(this::toParameterResponse)
                 .toList();
@@ -73,6 +83,7 @@ public class ParameterServiceImpl implements ParameterService {
                 .orElseThrow(() -> new ParameterNotFoundException(paramNo));
 
         parameter.setParamValue(value);
+        log.debug("bindParameterValue : {}", parameter);
     }
 
     private ParameterResponse toParameterResponse(RuleParameter parameter) {

@@ -23,6 +23,7 @@ import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleMemberMappingRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @Transactional
 public class RuleServiceImpl implements RuleService {
@@ -60,6 +62,7 @@ public class RuleServiceImpl implements RuleService {
         String email = MemberThreadLocal.getMemberEmail();
 
         if (Objects.isNull(email) || email.isBlank()) {
+            log.error("registerRule unauthorized");
             throw new UnauthorizedException("로그인이 필요합니다.");
         }
 
@@ -69,6 +72,7 @@ public class RuleServiceImpl implements RuleService {
         ResponseEntity<MemberResponse> response = memberAdaptor.getMemberByEmail(email);
 
         if (response == null || response.getBody() == null) {
+            log.error("registerRule member not found");
             throw new MemberNotFoundException(email);
         }
 
@@ -78,8 +82,10 @@ public class RuleServiceImpl implements RuleService {
                 request.getRuleDescription(),
                 request.getRulePriority()
         );
+        log.debug("registerRule rule : {}", rule);
 
         MemberResponse memberResponse = response.getBody();
+        log.debug("registerRule member : {}", memberResponse);
 
         try {
             ruleMemberMappingRepository.save(
@@ -89,6 +95,7 @@ public class RuleServiceImpl implements RuleService {
                     )
             );
         } catch (DataAccessException e) {
+            log.error("registerRule mapping failed");
             throw new RulePersistException("rule member mapping failed : " + e);
         }
 
@@ -106,21 +113,27 @@ public class RuleServiceImpl implements RuleService {
                 request.getRulePriority()
         );
 
+        log.debug("updateRule : {}", rule);
+
         return toRuleResponse(rule);
     }
 
     @Override
     public void deleteRule(Long ruleNo) {
         if (!ruleRepository.existsById(ruleNo)) {
+            log.error("deleteRule rule not found");
             throw new RuleNotFoundException(ruleNo);
         }
 
         ruleRepository.deleteById(ruleNo);
+        log.debug("deleteRule success");
     }
 
     @Override
     @Transactional(readOnly = true)
     public RuleResponse getRule(Long ruleNo) {
+        log.debug("getRule start");
+
         return ruleRepository.findById(ruleNo)
                 .map(this::toRuleResponse)
                 .orElseThrow(() -> new RuleNotFoundException(ruleNo));
@@ -132,9 +145,11 @@ public class RuleServiceImpl implements RuleService {
         List<Rule> ruleList = ruleRepository.findAll();
 
         if (ruleList.isEmpty()) {
+            log.error("getAllRule rule not found");
             throw new RuleNotFoundException("Rule Not Found");
         }
 
+        log.debug("getAllRule ruleList : {}", ruleList);
         return ruleList.stream()
                 .map(this::toRuleResponse)
                 .toList();
@@ -147,6 +162,7 @@ public class RuleServiceImpl implements RuleService {
                 .orElseThrow(() -> new RuleGroupNotFoundException(ruleGroupNo));
 
         List<Rule> ruleList = ruleRepository.findByRuleGroup(ruleGroup);
+        log.debug("getRulesByGroup list : {}", ruleList);
 
         return ruleList.stream()
                 .map(this::toRuleResponse)
@@ -159,11 +175,15 @@ public class RuleServiceImpl implements RuleService {
                 .orElseThrow(() -> new RuleNotFoundException(ruleNo));
 
         rule.setActive(active);
+
+        log.debug("setRuleActive rule : {}", rule);
         ruleRepository.save(rule);
     }
 
     @Override
     public Rule getRuleEntity(Long ruleNo) {
+        log.debug("getRuleEntity start");
+
         return ruleRepository.findById(ruleNo)
                 .orElseThrow(() -> new RuleNotFoundException(ruleNo));
     }

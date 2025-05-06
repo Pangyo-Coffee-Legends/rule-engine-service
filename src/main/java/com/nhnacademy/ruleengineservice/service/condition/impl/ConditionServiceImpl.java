@@ -41,21 +41,27 @@ public class ConditionServiceImpl implements ConditionService {
                 request.getConPriority()
         );
 
+        log.debug("registerCondition : {}", condition);
+
         return toConditionResponse(conditionRepository.save(condition));
     }
 
     @Override
     public void deleteCondition(Long conditionNo) {
         if(!conditionRepository.existsById(conditionNo)) {
+            log.error("deleteCondition condition not found");
             throw new ConditionNotFoundException(conditionNo);
         }
 
         conditionRepository.deleteById(conditionNo);
+        log.debug("deleteCondition success");
     }
 
     @Override
     @Transactional(readOnly = true)
     public ConditionResponse getCondition(Long conditionNo) {
+        log.debug("getCondition start");
+
         return conditionRepository.findById(conditionNo)
                 .map(this::toConditionResponse)
                 .orElseThrow(() -> new ConditionNotFoundException(conditionNo));
@@ -67,8 +73,11 @@ public class ConditionServiceImpl implements ConditionService {
         List<Condition> conditionList = conditionRepository.findAll();
 
         if (conditionList.isEmpty()) {
+            log.error("getConditionsByRule condition list not found");
             throw new ConditionNotFoundException("Condition List Not Found");
         }
+
+        log.debug("conditionList : {}", conditionList);
 
         return conditionList.stream()
                 .map(this::toConditionResponse)
@@ -80,10 +89,14 @@ public class ConditionServiceImpl implements ConditionService {
         Condition condition = conditionRepository.findById(conditionNo)
                 .orElseThrow(() -> new ConditionNotFoundException(conditionNo));
 
+        log.debug("evaluateCondition condition : {}", condition);
+
         Object factValue = facts.get(condition.getConField());
         if (factValue == null) {
             return false;
         }
+
+        log.debug("evaluateCondition factValue : {}", factValue);
 
         switch (condition.getConType()) {
             case "EQ":

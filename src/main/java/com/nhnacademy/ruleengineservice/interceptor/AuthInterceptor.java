@@ -4,6 +4,7 @@ import com.nhnacademy.ruleengineservice.auth.MemberThreadLocal;
 import com.nhnacademy.ruleengineservice.dto.member.MemberDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,6 +37,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
  *
  * @author 강승우
  */
+@Slf4j
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
@@ -55,12 +57,15 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         if (isAuthenticated(authentication)) {
             MemberDetails memberDetails = (MemberDetails) authentication.getPrincipal();
+            log.debug("memberDetails : {}", memberDetails);
+
             String mbEmail = memberDetails.getUsername();
             MemberThreadLocal.setMemberEmail(mbEmail);
 
             return true;
         }
 
+        log.warn("preHandle fail!");
         return false;
     }
 
@@ -76,6 +81,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         MemberThreadLocal.removedMemberEmail();
+        log.debug("memberThreadLocal remove success!");
     }
 
     /**

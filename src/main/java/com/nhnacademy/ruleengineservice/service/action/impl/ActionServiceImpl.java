@@ -11,6 +11,7 @@ import com.nhnacademy.ruleengineservice.registry.ActionHandlerRegistry;
 import com.nhnacademy.ruleengineservice.repository.action.ActionRepository;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @Transactional
 public class ActionServiceImpl implements ActionService {
@@ -38,6 +40,7 @@ public class ActionServiceImpl implements ActionService {
     @Override
     public ActionResponse registerAction(ActionRegisterRequest request) {
         Rule rule = ruleService.getRuleEntity(request.getRuleNo());
+        log.debug("registerAction rule : {}", rule);
 
         Action action = Action.ofNewAction(
                 rule,
@@ -45,6 +48,7 @@ public class ActionServiceImpl implements ActionService {
                 request.getActParam(),
                 request.getActPriority()
         );
+        log.debug("registerAction action : {}", action);
 
         return toActionResponse(actionRepository.save(action));
     }
@@ -52,15 +56,19 @@ public class ActionServiceImpl implements ActionService {
     @Override
     public void deleteAction(Long actionNo) {
         if(!actionRepository.existsById(actionNo)) {
+            log.error("deleteAction action not found");
             throw new ActionNotFoundException(actionNo);
         }
 
         actionRepository.deleteById(actionNo);
+        log.debug("deleteAction success");
     }
 
     @Override
     @Transactional(readOnly = true)
     public ActionResponse getAction(Long actionNo) {
+        log.debug("getAction start");
+
         return actionRepository.findById(actionNo)
                 .map(this::toActionResponse)
                 .orElseThrow(() -> new ActionNotFoundException(actionNo));
@@ -72,6 +80,7 @@ public class ActionServiceImpl implements ActionService {
         Rule rule = ruleService.getRuleEntity(ruleNo);
 
         List<Action> actionList = actionRepository.findByRule(rule);
+        log.debug("getActionsByRule : {}", actionList);
 
         return actionList.stream()
                 .map(this::toActionResponse)
@@ -85,8 +94,12 @@ public class ActionServiceImpl implements ActionService {
 
         try {
             ActionHandler handler = actionHandlerRegistry.getHandler(action.getActType());
+            log.debug("performAction : {}", handler);
+
             return handler.handle(action, context);
         } catch (Exception e) {
+            log.error("performAction fail!");
+
             return new ActionResult(
                     action.getActNo(),
                     false,
@@ -109,6 +122,8 @@ public class ActionServiceImpl implements ActionService {
             ActionResult result = performAction(action.getActNo(), context);
             results.add(result);
         }
+
+        log.debug("executeActionsForRule : {}", results);
 
         return results;
     }

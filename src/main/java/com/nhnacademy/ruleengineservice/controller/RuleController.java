@@ -4,6 +4,7 @@ import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleUpdateRequest;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,7 @@ import java.util.List;
  * 규칙 등록, 조회, 수정, 삭제 등 Rule 도메인에 대한 HTTP 엔드포인트를 제공합니다.
  * </p>
  */
+@Slf4j
 @RestController
 @RequestMapping(value = "/api/v1/rules")
 public class RuleController {
@@ -35,6 +37,8 @@ public class RuleController {
     public ResponseEntity<RuleResponse> registerRule(@RequestBody RuleRegisterRequest request) {
         RuleResponse response = ruleService.registerRule(request);
 
+        log.debug("registerRule : {}", response);
+
         return ResponseEntity
                 .ok(response);
     }
@@ -49,6 +53,8 @@ public class RuleController {
     public ResponseEntity<RuleResponse> getRule(@PathVariable Long ruleNo) {
         RuleResponse response = ruleService.getRule(ruleNo);
 
+        log.debug("getRule : {}", response);
+
         return ResponseEntity.ok(response);
     }
 
@@ -60,6 +66,8 @@ public class RuleController {
     @GetMapping
     public ResponseEntity<List<RuleResponse>> getRules() {
         List<RuleResponse> rules = ruleService.getAllRule();
+
+        log.debug("getRules : {}", rules);
 
         return ResponseEntity.ok(rules);
     }
@@ -76,6 +84,8 @@ public class RuleController {
                                                    @RequestBody RuleUpdateRequest request) {
         RuleResponse response = ruleService.updateRule(ruleNo, request);
 
+        log.debug("updateRule : {}", response);
+
         return ResponseEntity.ok(response);
     }
 
@@ -88,6 +98,8 @@ public class RuleController {
     @DeleteMapping("/{ruleNo}")
     public ResponseEntity<Void> deleteRule(@PathVariable Long ruleNo) {
         ruleService.deleteRule(ruleNo);
+
+        log.debug("deleteRule run");
 
         return ResponseEntity.noContent().build();
     }

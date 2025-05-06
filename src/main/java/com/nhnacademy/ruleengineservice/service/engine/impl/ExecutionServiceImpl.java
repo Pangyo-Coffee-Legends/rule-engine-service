@@ -5,6 +5,7 @@ import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import com.nhnacademy.ruleengineservice.service.engine.ExecutionService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @Transactional
 public class ExecutionServiceImpl implements ExecutionService {
@@ -30,11 +32,14 @@ public class ExecutionServiceImpl implements ExecutionService {
             results.add(executeAction(action, facts));
         }
 
+        log.debug("executeActions : {}", results);
+
         return results;
     }
 
     @Override
     public ActionResult executeAction(Action action, Map<String, Object> context) {
+        log.debug("executeAction success");
         return actionService.performAction(action.getActNo(), context);
     }
 }
