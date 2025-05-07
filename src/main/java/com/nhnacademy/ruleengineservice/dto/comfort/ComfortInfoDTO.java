@@ -20,12 +20,32 @@ public class ComfortInfoDTO {
     LocalDateTime currentTime;
 
     /**
-     * 쾌적지수
+     * 온도
      */
-    Double comfortIndex;
+    Double temperature;
 
     /**
-     * 쾌적지수 등급
+     * 습도
      */
-    String comfortGrade;
+    Double humidity;
+
+    /**
+     * co2
+     */
+    Double co2;
+
+    /**
+     * ai 온도 설명
+     */
+    String temperatureComment;
+
+    /**
+     * ai 습도 설명
+     */
+    String humidityComment;
+
+    /**
+     * ai co2 설명
+     */
+    String co2Comment;
 }
