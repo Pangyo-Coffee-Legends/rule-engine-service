@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.domain.condition;
 
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +11,8 @@ import java.time.LocalDateTime;
  * 각 Condition은 비교 타입, 비교할 필드, 비교 값, 우선순위 등으로 구성됩니다.
  */
 @Entity
+@Getter
+@Table(name = "conditions")
 public class Condition {
 
     /**
@@ -112,38 +115,6 @@ public class Condition {
      */
     @PrePersist
     public void prePersist() { this.createdAt = LocalDateTime.now(); }
-
-    public void setRule(Rule rule) {
-        this.rule = rule;
-    }
-
-    public Rule getRule() {
-        return rule;
-    }
-
-    public Long getConditionNo() {
-        return conditionNo;
-    }
-
-    public String getConType() {
-        return conType;
-    }
-
-    public String getConField() {
-        return conField;
-    }
-
-    public String getConValue() {
-        return conValue;
-    }
-
-    public Integer getConPriority() {
-        return conPriority;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 
     @Override
     public String toString() {

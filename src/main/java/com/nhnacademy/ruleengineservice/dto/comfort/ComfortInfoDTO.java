@@ -1,35 +1,51 @@
 package com.nhnacademy.ruleengineservice.dto.comfort;
 
+import lombok.Value;
+
 import java.time.LocalDateTime;
 
 /**
  * 쾌적도 정보를 담아서 보내는 DTO 클래스
  */
+@Value
 public class ComfortInfoDTO {
     /**
      * 장소
      */
-    private String location;
+    String location;
 
     /**
      * 현재 시간
      */
-    private LocalDateTime currentTime;
+    LocalDateTime currentTime;
 
     /**
-     * 쾌적지수
+     * 온도
      */
-    private Double comfortIndex;
+    Double temperature;
 
     /**
-     * 쾌적지수 등급
+     * 습도
      */
-    private String comfortGrade;
+    Double humidity;
 
-    public ComfortInfoDTO(String location, Double comfortIndex, String comfortGrade) {
-        this.location = location;
-        this.currentTime = LocalDateTime.now();
-        this.comfortIndex = comfortIndex;
-        this.comfortGrade = comfortGrade;
-    }
+    /**
+     * co2
+     */
+    Double co2;
+
+    /**
+     * ai 온도 설명
+     */
+    String temperatureComment;
+
+    /**
+     * ai 습도 설명
+     */
+    String humidityComment;
+
+    /**
+     * ai co2 설명
+     */
+    String co2Comment;
 }

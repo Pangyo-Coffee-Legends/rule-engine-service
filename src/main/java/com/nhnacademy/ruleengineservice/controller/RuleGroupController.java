@@ -3,6 +3,7 @@ package com.nhnacademy.ruleengineservice.controller;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupResponse;
 import com.nhnacademy.ruleengineservice.service.rule.RuleGroupService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +31,7 @@ import java.util.List;
  *
  * @author 강승우
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/rule-groups")
 public class RuleGroupController {
@@ -49,6 +51,8 @@ public class RuleGroupController {
     @PostMapping
     public ResponseEntity<RuleGroupResponse> registerRuleGroup(@RequestBody RuleGroupRegisterRequest request) {
         RuleGroupResponse response = ruleGroupService.registerRuleGroup(request);
+
+        log.debug("registerRuleGroup : {}", response);
         
         return ResponseEntity.ok(response);
     }
@@ -63,6 +67,8 @@ public class RuleGroupController {
     public ResponseEntity<RuleGroupResponse> getRuleGroup(@PathVariable Long ruleGroupNo) {
         RuleGroupResponse response = ruleGroupService.getRuleGroup(ruleGroupNo);
 
+        log.debug("getRuleGroup : {}", response);
+
         return ResponseEntity.ok(response);
     }
 
@@ -74,6 +80,8 @@ public class RuleGroupController {
     @GetMapping
     public ResponseEntity<List<RuleGroupResponse>> getRuleGroups() {
         List<RuleGroupResponse> groups = ruleGroupService.getAllRuleGroups();
+
+        log.debug("getRuleGroups : {}", groups);
 
         return ResponseEntity.ok(groups);
     }
@@ -87,6 +95,8 @@ public class RuleGroupController {
     @DeleteMapping("/{ruleGroupNo}")
     public ResponseEntity<Void> deleteRuleGroup(@PathVariable Long ruleGroupNo) {
         ruleGroupService.deleteRuleGroup(ruleGroupNo);
+
+        log.debug("deleteRuleGroup run");
 
         return ResponseEntity.noContent().build();
     }

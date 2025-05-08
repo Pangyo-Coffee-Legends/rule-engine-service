@@ -8,8 +8,6 @@ import com.nhnacademy.ruleengineservice.dto.parameter.ParameterResponse;
 import com.nhnacademy.ruleengineservice.exception.parameter.ParameterNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.repository.parameter.RuleParameterRepository;
-import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
-import com.nhnacademy.ruleengineservice.service.rule.RuleService;
 import com.nhnacademy.ruleengineservice.service.rule.impl.RuleServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -85,9 +83,7 @@ class ParameterServiceImplTest {
         when(ruleService.getRuleEntity(nonExistentRuleNo))
                 .thenThrow(new RuleNotFoundException(nonExistentRuleNo));
 
-        assertThrows(RuleNotFoundException.class, () -> {
-            parameterService.registerParameter(request);
-        });
+        assertThrows(RuleNotFoundException.class, () -> parameterService.registerParameter(request));
 
         verify(ruleParameterRepository, never()).save(any(RuleParameter.class));
     }
@@ -110,9 +106,7 @@ class ParameterServiceImplTest {
         Long nonExistentParamNo = 999L;
         when(ruleParameterRepository.existsById(nonExistentParamNo)).thenReturn(false);
 
-        assertThrows(ParameterNotFoundException.class, () -> {
-            parameterService.deleteParameter(nonExistentParamNo);
-        });
+        assertThrows(ParameterNotFoundException.class, () -> parameterService.deleteParameter(nonExistentParamNo));
 
         verify(ruleParameterRepository, never()).deleteById(anyLong());
     }

@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.dto.condition;
 
+import lombok.Value;
+
 /**
  * 규칙(Rule)에 속한 조건(Condition)의 정보를 클라이언트에 전달하기 위한 응답 DTO 클래스입니다.
  * <p>
@@ -20,40 +22,41 @@ package com.nhnacademy.ruleengineservice.dto.condition;
  *
  * @author 강승우
  */
+@Value
 public class ConditionResponse {
 
     /**
      * 조건의 고유 식별자입니다.
      * conditions 테이블의 con_no 컬럼과 매핑됩니다.
      */
-    private Long conditionNo;
+    Long conditionNo;
 
     /**
      * 조건이 속한 규칙의 식별자입니다.
      * conditions 테이블의 rule_no 컬럼과 매핑되며, rules 테이블을 참조합니다.
      */
-    private Long ruleNo;
+    Long ruleNo;
 
     /**
      * 조건의 비교 연산자 유형입니다.
      * 예: "EQUALS", "GREATER_THAN", "LESS_THAN", "CONTAINS" 등
      * conditions 테이블의 con_type 컬럼과 매핑됩니다.
      */
-    private String conType;
+    String conType;
 
     /**
      * 조건이 적용될 필드명입니다.
      * 평가 시 이 필드명을 기준으로 데이터를 조회합니다.
      * conditions 테이블의 con_field 컬럼과 매핑됩니다.
      */
-    private String conField;
+    String conField;
 
     /**
      * 조건 비교에 사용되는 값입니다.
      * 평가 시 conField의 값과 이 값을 conType에 따라 비교합니다.
      * conditions 테이블의 con_value 컬럼과 매핑됩니다.
      */
-    private String conValue;
+    String conValue;
 
     /**
      * 조건의 우선순위입니다.
@@ -61,60 +64,5 @@ public class ConditionResponse {
      * 숫자가 낮을수록 높은 우선순위를 가집니다.
      * conditions 테이블의 con_priority 컬럼과 매핑됩니다.
      */
-    private Integer conPriority;
-
-    /**
-     * 모든 필드를 초기화하는 생성자입니다.
-     *
-     * @param conditionNo 조건 식별자
-     * @param ruleNo      규칙 식별자
-     * @param conType     조건 비교 연산자 유형
-     * @param conField    조건이 적용될 필드명
-     * @param conValue    비교할 값
-     * @param conPriority 조건 우선순위
-     */
-    public ConditionResponse(Long conditionNo, Long ruleNo, String conType, String conField, String conValue, Integer conPriority) {
-        this.conditionNo = conditionNo;
-        this.ruleNo = ruleNo;
-        this.conType = conType;
-        this.conField = conField;
-        this.conValue = conValue;
-        this.conPriority = conPriority;
-    }
-
-    public Long getConditionNo() {
-        return conditionNo;
-    }
-
-    public Long getRuleNo() {
-        return ruleNo;
-    }
-
-    public String getConType() {
-        return conType;
-    }
-
-    public String getConField() {
-        return conField;
-    }
-
-    public String getConValue() {
-        return conValue;
-    }
-
-    public Integer getConPriority() {
-        return conPriority;
-    }
-
-    @Override
-    public String toString() {
-        return "ConditionResponse{" +
-                "conditionNo=" + conditionNo +
-                ", ruleNo=" + ruleNo +
-                ", conType='" + conType + '\'' +
-                ", conField='" + conField + '\'' +
-                ", conValue='" + conValue + '\'' +
-                ", conPriority=" + conPriority +
-                '}';
-    }
+    Integer conPriority;
 }

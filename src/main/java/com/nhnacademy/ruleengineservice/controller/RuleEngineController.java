@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.controller;
 
 import com.nhnacademy.ruleengineservice.dto.engine.RuleEvaluationResult;
 import com.nhnacademy.ruleengineservice.service.engine.RuleEngineService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,7 @@ import java.util.Map;
  *
  * @author 강승우
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/rule-engine")
 public class RuleEngineController {
@@ -58,6 +60,8 @@ public class RuleEngineController {
     ) {
         List<RuleEvaluationResult> results = ruleEngineService.executeTriggeredRules(eventType, eventParams, facts);
 
+        log.debug("executeTriggeredRules : {}", results);
+
         return ResponseEntity.ok(results);
     }
 
@@ -74,6 +78,8 @@ public class RuleEngineController {
             @RequestBody Map<String, Object> facts
     ) {
         RuleEvaluationResult result = ruleEngineService.executeRule(ruleNo, facts);
+
+        log.debug("executeRule : {}", result);
 
         return ResponseEntity.ok(result);
     }

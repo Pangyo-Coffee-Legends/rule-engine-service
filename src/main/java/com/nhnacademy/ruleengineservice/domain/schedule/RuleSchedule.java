@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.domain.schedule;
 
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
  * 크론 표현식, 시간대, 최대 재시도 횟수, 활성화 여부, 생성일시 등을 관리합니다.
  */
 @Entity
+@Getter
 @Table(name = "rule_schedules")
 public class RuleSchedule {
 
@@ -123,34 +125,6 @@ public class RuleSchedule {
      */
     @PrePersist
     public void prePersist() { this.createdAt = LocalDateTime.now(); }
-
-    public Rule getRule() {
-        return rule;
-    }
-
-    public Long getScheduleNo() {
-        return scheduleNo;
-    }
-
-    public String getCronExpression() {
-        return cronExpression;
-    }
-
-    public String getTimeZone() {
-        return timeZone;
-    }
-
-    public Integer getMaxRetires() {
-        return maxRetires;
-    }
-
-    public Boolean getActive() {
-        return active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 
     @Override
     public String toString() {

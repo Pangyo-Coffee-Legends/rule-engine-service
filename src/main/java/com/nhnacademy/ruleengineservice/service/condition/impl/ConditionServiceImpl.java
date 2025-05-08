@@ -1,7 +1,6 @@
 package com.nhnacademy.ruleengineservice.service.condition.impl;
 
 import com.nhnacademy.ruleengineservice.domain.condition.Condition;
-import com.nhnacademy.ruleengineservice.domain.parameter.RuleParameter;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
@@ -10,11 +9,13 @@ import com.nhnacademy.ruleengineservice.exception.condition.ConditionNotFoundExc
 import com.nhnacademy.ruleengineservice.repository.condition.ConditionRepository;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+@Slf4j
 @Service
 @Transactional
 public class ConditionServiceImpl implements ConditionService {
@@ -40,21 +41,27 @@ public class ConditionServiceImpl implements ConditionService {
                 request.getConPriority()
         );
 
+        log.debug("registerCondition : {}", condition);
+
         return toConditionResponse(conditionRepository.save(condition));
     }
 
     @Override
     public void deleteCondition(Long conditionNo) {
         if(!conditionRepository.existsById(conditionNo)) {
+            log.error("deleteCondition condition not found");
             throw new ConditionNotFoundException(conditionNo);
         }
 
         conditionRepository.deleteById(conditionNo);
+        log.debug("deleteCondition success");
     }
 
     @Override
     @Transactional(readOnly = true)
     public ConditionResponse getCondition(Long conditionNo) {
+        log.debug("getCondition start");
+
         return conditionRepository.findById(conditionNo)
                 .map(this::toConditionResponse)
                 .orElseThrow(() -> new ConditionNotFoundException(conditionNo));
@@ -66,8 +73,11 @@ public class ConditionServiceImpl implements ConditionService {
         List<Condition> conditionList = conditionRepository.findAll();
 
         if (conditionList.isEmpty()) {
+            log.error("getConditionsByRule condition list not found");
             throw new ConditionNotFoundException("Condition List Not Found");
         }
+
+        log.debug("conditionList : {}", conditionList);
 
         return conditionList.stream()
                 .map(this::toConditionResponse)
@@ -79,10 +89,14 @@ public class ConditionServiceImpl implements ConditionService {
         Condition condition = conditionRepository.findById(conditionNo)
                 .orElseThrow(() -> new ConditionNotFoundException(conditionNo));
 
+        log.debug("evaluateCondition condition : {}", condition);
+
         Object factValue = facts.get(condition.getConField());
         if (factValue == null) {
             return false;
         }
+
+        log.debug("evaluateCondition factValue : {}", factValue);
 
         switch (condition.getConType()) {
             case "EQ":
@@ -142,10 +156,6 @@ public class ConditionServiceImpl implements ConditionService {
                 } catch (Exception e) {
                     return false;
                 }
-            case "IS_NULL":
-                return factValue.toString().isEmpty();
-            case "IS_NOT_NULL":
-                return !factValue.toString().isEmpty();
             default:
                 return false;
         }

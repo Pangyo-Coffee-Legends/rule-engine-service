@@ -7,11 +7,13 @@ import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupAlreadyExistsExc
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
 import com.nhnacademy.ruleengineservice.service.rule.RuleGroupService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @Transactional
 public class RuleGroupServiceImpl implements RuleGroupService {
@@ -25,6 +27,7 @@ public class RuleGroupServiceImpl implements RuleGroupService {
     @Override
     public RuleGroupResponse registerRuleGroup(RuleGroupRegisterRequest request) {
         if (ruleGroupRepository.existsByRuleGroupName(request.getRuleGroupName())) {
+            log.error("registerRuleGroup already exists");
             throw new RuleGroupAlreadyExistsException(request.getRuleGroupName());
         }
 
@@ -33,6 +36,7 @@ public class RuleGroupServiceImpl implements RuleGroupService {
                 request.getRuleGroupDescription(),
                 request.getPriority()
         );
+        log.debug("registerRuleGroup group : {}", group);
 
         return toRuleGroupResponse(ruleGroupRepository.save(group));
     }
@@ -40,15 +44,19 @@ public class RuleGroupServiceImpl implements RuleGroupService {
     @Override
     public void deleteRuleGroup(Long ruleGroupNo) {
         if (!ruleGroupRepository.existsById(ruleGroupNo)) {
+            log.error("deleteRuleGroup group not found");
             throw new RuleGroupNotFoundException(ruleGroupNo);
         }
 
         ruleGroupRepository.deleteById(ruleGroupNo);
+        log.debug("deleteRuleGroup success");
     }
 
     @Override
     @Transactional(readOnly = true)
     public RuleGroupResponse getRuleGroup(Long ruleGroupNo) {
+        log.debug("getRuleGroup start");
+
         return ruleGroupRepository.findById(ruleGroupNo)
                 .map(this::toRuleGroupResponse)
                 .orElseThrow(() -> new RuleGroupNotFoundException(ruleGroupNo));
@@ -60,8 +68,11 @@ public class RuleGroupServiceImpl implements RuleGroupService {
         List<RuleGroup> ruleGroupList = ruleGroupRepository.findAll();
 
         if (ruleGroupList.isEmpty()) {
+            log.error("getAllRuleGroups group not found");
             throw new RuleGroupNotFoundException("Rule Groups Not Found");
         }
+
+        log.debug("getAllRuleGroups groupList : {}", ruleGroupList);
 
         // 엔티티를 DTO로 변환
         return ruleGroupList.stream()
@@ -75,6 +86,8 @@ public class RuleGroupServiceImpl implements RuleGroupService {
                 .orElseThrow(() -> new RuleGroupNotFoundException(ruleGroupNo));
 
         ruleGroup.setActive(active);
+
+        log.debug("setRuleGroupActive : {}", ruleGroup);
         ruleGroupRepository.save(ruleGroup);
     }
 

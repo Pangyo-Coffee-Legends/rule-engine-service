@@ -24,7 +24,7 @@ class TriggerEventTest {
     @DisplayName("TriggerEvent 생성 및 조회 검증")
     void createTriggerEvent_success() {
         String eventType = "INSERT";
-        String eventParams = "{\"cron\":\"0 0 8 * * ?\",\"timeZone\":\"Asia/Seoul\"}";;
+        String eventParams = "{\"cron\":\"0 0 8 * * ?\",\"timeZone\":\"Asia/Seoul\"}";
 
         RuleGroup group = RuleGroup.ofNewRuleGroup("test G", "test D", 1);
         entityManager.persist(group);

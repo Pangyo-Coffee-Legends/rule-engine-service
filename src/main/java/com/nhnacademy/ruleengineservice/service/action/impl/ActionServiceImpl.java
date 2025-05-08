@@ -5,18 +5,22 @@ import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
-import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
 import com.nhnacademy.ruleengineservice.exception.action.ActionNotFoundException;
+import com.nhnacademy.ruleengineservice.handler.ActionHandler;
+import com.nhnacademy.ruleengineservice.registry.ActionHandlerRegistry;
 import com.nhnacademy.ruleengineservice.repository.action.ActionRepository;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @Transactional
 public class ActionServiceImpl implements ActionService {
@@ -25,14 +29,18 @@ public class ActionServiceImpl implements ActionService {
 
     private final RuleService ruleService;
 
-    public ActionServiceImpl(ActionRepository actionRepository, RuleService ruleService) {
+    private final ActionHandlerRegistry actionHandlerRegistry;
+
+    public ActionServiceImpl(ActionRepository actionRepository, RuleService ruleService, ActionHandlerRegistry actionHandlerRegistry) {
         this.actionRepository = actionRepository;
         this.ruleService = ruleService;
+        this.actionHandlerRegistry = actionHandlerRegistry;
     }
 
     @Override
     public ActionResponse registerAction(ActionRegisterRequest request) {
         Rule rule = ruleService.getRuleEntity(request.getRuleNo());
+        log.debug("registerAction rule : {}", rule);
 
         Action action = Action.ofNewAction(
                 rule,
@@ -40,6 +48,7 @@ public class ActionServiceImpl implements ActionService {
                 request.getActParam(),
                 request.getActPriority()
         );
+        log.debug("registerAction action : {}", action);
 
         return toActionResponse(actionRepository.save(action));
     }
@@ -47,15 +56,19 @@ public class ActionServiceImpl implements ActionService {
     @Override
     public void deleteAction(Long actionNo) {
         if(!actionRepository.existsById(actionNo)) {
+            log.error("deleteAction action not found");
             throw new ActionNotFoundException(actionNo);
         }
 
         actionRepository.deleteById(actionNo);
+        log.debug("deleteAction success");
     }
 
     @Override
     @Transactional(readOnly = true)
     public ActionResponse getAction(Long actionNo) {
+        log.debug("getAction start");
+
         return actionRepository.findById(actionNo)
                 .map(this::toActionResponse)
                 .orElseThrow(() -> new ActionNotFoundException(actionNo));
@@ -67,6 +80,7 @@ public class ActionServiceImpl implements ActionService {
         Rule rule = ruleService.getRuleEntity(ruleNo);
 
         List<Action> actionList = actionRepository.findByRule(rule);
+        log.debug("getActionsByRule : {}", actionList);
 
         return actionList.stream()
                 .map(this::toActionResponse)
@@ -78,72 +92,23 @@ public class ActionServiceImpl implements ActionService {
         Action action = actionRepository.findById(actionNo)
                 .orElseThrow(() -> new ActionNotFoundException(actionNo));
 
-        boolean success = false;
-        String message = "";
-        Object output = null;
-
         try {
-            // 유형별 실행 로직 분기 (예시)
-            switch (action.getActType()) {
-                case "EMAIL":
-                    // 이메일 발송 로직 (예: context 에서 수신자, 제목, 본문 추출)
-                    // output = emailService.sendEmail(...);
-                    success = true;
-                    message = "이메일 발송 성공";
-                    break;
-                case "WEBHOOK":
-                    // 외부 시스템으로 HTTP POST 요청 (예: context 에서 URL, payload 추출)
-                    // output = webhookService.sendWebhook(...);
-                    success = true;
-                    message = "웹훅 호출 성공";
-                    break;
-                case "LOG":
-                    // 시스템 로그 기록 (예: context 에서 로그 메시지 추출)
-                    // output = logService.writeLog(...);
-                    success = true;
-                    message = "로그 기록 성공";
-                    break;
-                case "NOTIFICATION":
-                    // 사내/외부 알림 시스템 연동 (예: context 에서 알림 대상, 메시지 추출)
-                    // output = notificationService.sendNotification(...);
-                    success = true;
-                    message = "알림 전송 성공";
-                    break;
-                case "COMFORT_NOTIFICATION":
-                    // context 에서 필요한 정보 추출
-                    String location = (String) context.get("location");
-                    Double comfortIndex = (Double) context.get("comfortIndex");
-                    String comfortGrade = (String) context.get("comfortGrade");
+            ActionHandler handler = actionHandlerRegistry.getHandler(action.getActType());
+            log.debug("performAction : {}", handler);
 
-                    // DTO 생성 및 데이터 설정
-                    ComfortInfoDTO comfortInfo = new ComfortInfoDTO(
-                            location,
-                            comfortIndex,
-                            comfortGrade
-                    );
-
-                    // 실제 알림 로직 구현
-                    // notificationService.sendComfortNotification(comfortInfo);
-
-                    success = true;
-                    message = "쾌적도 알림 전송 성공";
-                    output = comfortInfo;
-                    break;
-                default:
-                    message = "지원하지 않는 액션 타입";
-            }
+            return handler.handle(action, context);
         } catch (Exception e) {
-            message = "액션 실행 중 오류: " + e.getMessage();
-            output = null;
-        }
+            log.error("performAction fail!");
 
-        return ActionResult.ofNewActionResult(
-                action.getActNo(),
-                success,
-                action.getActType(),
-                message,
-                output
-        );
+            return new ActionResult(
+                    action.getActNo(),
+                    false,
+                    action.getActType(),
+                    "액션 실행 중 오류: " + e.getMessage(),
+                    null,
+                    LocalDateTime.now()
+            );
+        }
     }
 
     @Override
@@ -154,15 +119,11 @@ public class ActionServiceImpl implements ActionService {
         // 2. 각 액션 실행 후 결과 수집
         List<ActionResult> results = new ArrayList<>();
         for (Action action : actions) {
-            // 우선순위에 따라 정렬하거나 처리할 수 있음
             ActionResult result = performAction(action.getActNo(), context);
             results.add(result);
-
-            // 선택적: 액션 실행 실패 시 중단 옵션
-            // if (!result.isSuccess() && rule.isStopOnFailure()) {
-            //     break;
-            // }
         }
+
+        log.debug("executeActionsForRule : {}", results);
 
         return results;
     }

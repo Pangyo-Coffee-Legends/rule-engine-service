@@ -6,6 +6,7 @@ import com.nhnacademy.ruleengineservice.domain.parameter.RuleParameter;
 import com.nhnacademy.ruleengineservice.domain.schedule.RuleSchedule;
 import com.nhnacademy.ruleengineservice.domain.trigger.TriggerEvent;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import java.util.List;
  * @author 강승우
  */
 @Entity
+@Getter
 @Table(name = "rules")
 public class Rule {
 
@@ -182,58 +184,6 @@ public class Rule {
 
     public void setRuleGroup(RuleGroup ruleGroup) {
         this.ruleGroup = ruleGroup;
-    }
-
-    public List<TriggerEvent> getTriggerEventList() {
-        return triggerEventList;
-    }
-
-    public List<RuleSchedule> getRuleScheduleList() {
-        return ruleScheduleList;
-    }
-
-    public List<RuleParameter> getRuleParameterList() {
-        return ruleParameterList;
-    }
-
-    public List<Condition> getConditionList() {
-        return conditionList;
-    }
-
-    public List<Action> getActionList() {
-        return actionList;
-    }
-
-    public RuleGroup getRuleGroup() {
-        return ruleGroup;
-    }
-
-    public Long getRuleNo() {
-        return ruleNo;
-    }
-
-    public String getRuleName() {
-        return ruleName;
-    }
-
-    public String getRuleDescription() {
-        return ruleDescription;
-    }
-
-    public Integer getRulePriority() {
-        return rulePriority;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 
     @Override

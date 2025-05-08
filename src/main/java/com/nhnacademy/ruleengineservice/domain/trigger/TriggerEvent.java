@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.domain.trigger;
 
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +13,8 @@ import java.time.LocalDateTime;
  * 데이터 생성, 데이터 편집, 항목 추가 등의 이벤트가 규칙을 트리거 합니다.
  */
 @Entity
+@Getter
+@Table(name = "trigger_events")
 public class TriggerEvent {
 
     /**
@@ -111,26 +114,6 @@ public class TriggerEvent {
      */
     @PrePersist
     public void prePersist() { this.createdAt = LocalDateTime.now(); }
-
-    public Rule getRule() {
-        return rule;
-    }
-
-    public Long getEventNo() {
-        return eventNo;
-    }
-
-    public String getEventType() {
-        return eventType;
-    }
-
-    public String getEventParams() {
-        return eventParams;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 
     @Override
     public String toString() {

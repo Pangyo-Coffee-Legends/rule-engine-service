@@ -1,5 +1,7 @@
 package com.nhnacademy.ruleengineservice.dto.condition;
 
+import lombok.Value;
+
 /**
  * 조건(Condition) 평가 결과를 표현하는 클래스입니다.
  * <p>
@@ -17,71 +19,35 @@ package com.nhnacademy.ruleengineservice.dto.condition;
  * </ul>
  * </p>
  */
+@Value
 public class ConditionResult {
     /**
      * 조건의 고유 식별자입니다.
      * conditions 테이블의 con_no 컬럼과 매핑됩니다.
      */
-    private Long conNo;
+    Long conNo;
 
     /**
      * 조건이 적용된 필드의 이름입니다.
      * 실제 평가 시 이 필드명으로 데이터를 찾아 비교합니다.
      */
-    private String conField;
+    String conField;
 
     /**
      * 조건의 비교 연산자 타입입니다.
      * 예: "EQ"(equals), "GT"(greater than), "LT"(less than), "LIKE" 등
      */
-    private String conType;
+    String conType;
 
     /**
      * 조건 비교에 사용된 값입니다.
      * conField의 값과 이 값을 conType에 따라 비교한 결과가 matched 에 저장됩니다.
      */
-    private String conValue;
+    String conValue;
 
     /**
      * 조건 평가 결과입니다.
      * true 인 경우 조건이 충족됨을, false 인 경우 충족되지 않음을 의미합니다.
      */
-    private boolean matched;
-
-    /**
-     * 모든 필드를 초기화하는 생성자입니다.
-     *
-     * @param conNo    조건 식별자
-     * @param conField 조건이 적용된 필드명
-     * @param conType  조건 비교 타입
-     * @param conValue 조건 비교 값
-     * @param matched  조건 충족 여부
-     */
-    public ConditionResult(Long conNo, String conField, String conType, String conValue, boolean matched) {
-        this.conNo = conNo;
-        this.conField = conField;
-        this.conType = conType;
-        this.conValue = conValue;
-        this.matched = matched;
-    }
-
-    public Long getConNo() {
-        return conNo;
-    }
-
-    public String getConField() {
-        return conField;
-    }
-
-    public String getConType() {
-        return conType;
-    }
-
-    public String getConValue() {
-        return conValue;
-    }
-
-    public boolean isMatched() {
-        return matched;
-    }
+    boolean matched;
 }
