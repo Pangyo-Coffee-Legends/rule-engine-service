@@ -81,8 +81,8 @@ public class RuleEngineService {
 
         // 확장된 컨텍스트 생성
         Map<String, Object> enrichedContext = new HashMap<>(facts);
-        enrichedContext.put("ruleName", rule.getRuleName());
         enrichedContext.put("ruleNo", rule.getRuleNo());
+        enrichedContext.put("ruleName", rule.getRuleName());
         enrichedContext.put("executionTime", LocalDateTime.now());
 
         // 조건 평가 및 결과 기록

@@ -13,7 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -40,6 +41,8 @@ public class ConditionServiceImpl implements ConditionService {
                 request.getConValue(),
                 request.getConPriority()
         );
+
+        rule.getConditionList().add(condition);
 
         log.debug("registerCondition : {}", condition);
 
@@ -169,15 +172,12 @@ public class ConditionServiceImpl implements ConditionService {
 
     @Override
     public List<String> getRequiredFieldsByRule(Rule rule) {
-        Set<String> requiredFields = new HashSet<>();
-
-        // 룰에 연결된 조건에서 사용하는 필드 추출
-        List<Condition> conditions = conditionRepository.findByRule(rule);
-        for (Condition condition : conditions) {
-            requiredFields.add(condition.getConField());
-        }
-
-        return new ArrayList<>(requiredFields);
+        // Rule 엔티티에서 직접 조건 리스트 가져오기 (추가 쿼리 방지)
+        return rule.getConditionList().stream()
+                .map(Condition::getConField)
+                .filter(conField -> conField != null && !conField.isEmpty()) // 유효성 검사
+                .distinct() // 중복 제거
+                .toList();
     }
 
     @Override

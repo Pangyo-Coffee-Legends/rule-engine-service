@@ -1,23 +1,27 @@
 package com.nhnacademy.ruleengineservice.handler.action;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.domain.action.Action;
+import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
-import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
-import com.nhnacademy.ruleengineservice.dto.comfort.ComfortNotificationDTO;
 import com.nhnacademy.ruleengineservice.exception.action.ActionHandlerException;
 import com.nhnacademy.ruleengineservice.handler.ActionHandler;
-import lombok.RequiredArgsConstructor;
+import com.nhnacademy.ruleengineservice.service.action.ActionService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Objects;
 
+@Slf4j
 @Component
-@RequiredArgsConstructor
 public class ComfortNotificationActionHandler implements ActionHandler {
-    private final ObjectMapper objectMapper;
+
+    private final ActionService actionService;
+
+    public ComfortNotificationActionHandler(ActionService actionService) {
+        this.actionService = actionService;
+    }
 
     @Override
     public boolean supports(String actType) {
@@ -26,45 +30,34 @@ public class ComfortNotificationActionHandler implements ActionHandler {
 
     @Override
     public ActionResult handle(Action action, Map<String, Object> context) throws ActionHandlerException {
-        try {
-            if (!context.containsKey("json")) {
-                throw new ActionHandlerException("context 'json' not found");
-            }
+        String comportIndex = (String) context.get("comport_index");
+        if (Objects.nonNull(comportIndex)) {
+            // aircon : 냉방기, dehumidifier: 제습기, heater: 난방기, humidifier: 가습기
+            Map<String, Boolean> deviceCommands = switch (comportIndex) {
+                case "덥고 습함" -> Map.of("aircon", true, "dehumidifier", true);
+                case "춥고 건조" -> Map.of("heater", true, "humidifier", true);
+                case "최적 쾌적" -> Map.of("aircon", false, "heater", false);
+                default -> Map.of();
+            };
 
-            String json = (String) context.get("json");
-            ComfortNotificationDTO dto = objectMapper.readValue(json, ComfortNotificationDTO.class);
-
-            // dto 에서 필요한 정보 추출
-            String location = dto.getLocation();
-            Double temp = dto.getComfortIndex().getTemperature();
-            Double humidity = dto.getComfortIndex().getHumidity();
-            Double co2 = dto.getComfortIndex().getCo2();
-
-            String tempComment = dto.getAiComment().getTemperature();
-            String humidityComment = dto.getAiComment().getHumidity();
-            String co2Comment = dto.getAiComment().getCo2();
-
-            ComfortInfoDTO comfortInfo = new ComfortInfoDTO(
-                    location,
-                    LocalDateTime.now(),
-                    temp,
-                    humidity,
-                    co2,
-                    tempComment,
-                    humidityComment,
-                    co2Comment
-            );
-
-            return new ActionResult(
-                    action.getActNo(),
-                    true,
-                    action.getActType(),
-                    "쾌적도 알림 전송 성공",
-                    comfortInfo,
-                    LocalDateTime.now()
-            );
-        } catch (JsonProcessingException | IllegalArgumentException e) {
-            throw new ActionHandlerException("ComfortNotificationDTO 파싱 실패", e);
+            context.putAll(deviceCommands);
         }
+
+        ActionResponse response = actionService.getAction(action.getActNo());
+
+        if (Objects.nonNull(response)) {
+            context.put("action", response.getActParam());
+        }
+
+        log.debug("context : {}", context);
+
+        return new ActionResult(
+                action.getActNo(),
+                true,
+                action.getActType(),
+                "쾌적도 알림 전송 성공",
+                context,
+                LocalDateTime.now()
+        );
     }
 }

@@ -1,14 +1,10 @@
 package com.nhnacademy.ruleengineservice.domain.action;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import jakarta.persistence.*;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * Action 엔티티는 규칙이 발동될 때 실행될 동작(액션)을 정의합니다.
@@ -53,7 +49,7 @@ public class Action {
     private String actType;
 
     /**
-     * 액션 실행에 필요한 파라미터(JSON 등).
+     * 액션 실행에 필요한 파라미터.
      */
     @Column(nullable = false)
     private String actParams;
@@ -108,32 +104,8 @@ public class Action {
      * 저장 전 Map -> JSON 문자열 변환
      */
     @PrePersist
-    public void prePersist() throws JsonProcessingException {
+    public void prePersist() {
         this.createdAt = LocalDateTime.now();
-
-        if (actParamsMap != null) {
-            ObjectMapper mapper = new ObjectMapper();
-            this.actParams = mapper.writeValueAsString(actParamsMap);
-        }
-    }
-
-    /**
-     * DB 에 저장되지 않는 임시 필드
-     */
-    @Transient
-    private Map<String, Object> actParamsMap;
-
-    /**
-     * 조회 후 JSON 문자열 -> Map 변환
-     * @throws JsonProcessingException Json 임시 처리
-     */
-    @PostLoad
-    public void postLoad() throws JsonProcessingException {
-        if (actParams != null) {
-            ObjectMapper mapper = new ObjectMapper();
-            this.actParamsMap = mapper.readValue(actParams, new TypeReference<>() {
-            });
-        }
     }
 
     @Override

@@ -35,14 +35,9 @@ public class ComfortInfoDTO {
     Double co2;
 
     /**
-     * ai 온도 설명
+     * ai 온도, 습도 설명
      */
-    String temperatureComment;
-
-    /**
-     * ai 습도 설명
-     */
-    String humidityComment;
+    String comportIndex;
 
     /**
      * ai co2 설명

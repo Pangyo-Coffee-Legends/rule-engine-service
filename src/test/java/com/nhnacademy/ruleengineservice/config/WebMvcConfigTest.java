@@ -1,5 +1,6 @@
 package com.nhnacademy.ruleengineservice.config;
 
+import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,9 @@ class WebMvcConfigTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private ActionService actionService;
 
     @MockitoBean
     private RuleService ruleService;

@@ -24,8 +24,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @Slf4j
 @DataJpaTest
@@ -45,7 +44,7 @@ class ConditionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        rule = Mockito.mock();
+        rule = mock();
     }
 
     @Test
@@ -414,13 +413,15 @@ class ConditionServiceImplTest {
     void getRequiredFieldsByRule_duplicateFields() {
         Condition condition1 = Condition.ofNewCondition(rule, "EQ", "temperature", "25", 1);
         Condition condition2 = Condition.ofNewCondition(rule, "GT", "temperature", "30", 1);
+        Condition condition3 = Condition.ofNewCondition(rule, "GT", "humidity", "30", 1);
 
-        when(conditionRepository.findByRule(rule)).thenReturn(List.of(condition1, condition2));
+        when(rule.getConditionList()).thenReturn(Arrays.asList(condition1, condition2, condition3));
 
         List<String> fields = conditionService.getRequiredFieldsByRule(rule);
 
-        assertEquals(1, fields.size());
+        assertEquals(2, fields.size());
         assertEquals("temperature", fields.get(0));
+        assertEquals("humidity", fields.get(1));
     }
 
     @Test
@@ -475,7 +476,7 @@ class ConditionServiceImplTest {
     @Test
     @DisplayName("규칙에 연결된 조건들을 평가하고 결과 리스트 반환")
     void evaluateConditionsForRule_ReturnsListOfConditionResults() {
-        Rule mockRule = Mockito.mock();
+        Rule mockRule = mock();
         setField(mockRule, "ruleNo", 1L);
 
         Condition condition1 = Condition.ofNewCondition(mockRule, "LT", "temperature", "30", 1);
@@ -553,7 +554,6 @@ class ConditionServiceImplTest {
                 () -> assertFalse(results.get(1).isMatched())
         );
     }
-
 
     private void setField(Object target, String fieldName, Object value) {
         try {

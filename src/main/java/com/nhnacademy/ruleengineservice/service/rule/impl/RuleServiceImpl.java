@@ -22,7 +22,9 @@ import com.nhnacademy.ruleengineservice.exception.rule.RulePersistException;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleMemberMappingRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
+import com.nhnacademy.ruleengineservice.repository.trigger.TriggerRepository;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,7 @@ import java.util.Objects;
 @Slf4j
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class RuleServiceImpl implements RuleService {
 
     private final RuleGroupRepository ruleGroupRepository;
@@ -45,17 +48,7 @@ public class RuleServiceImpl implements RuleService {
 
     private final MemberAdaptor memberAdaptor;
 
-    public RuleServiceImpl(
-            RuleGroupRepository ruleGroupRepository,
-            RuleRepository ruleRepository,
-            RuleMemberMappingRepository ruleMemberMappingRepository,
-            MemberAdaptor memberAdaptor
-    ) {
-        this.ruleGroupRepository = ruleGroupRepository;
-        this.ruleRepository = ruleRepository;
-        this.ruleMemberMappingRepository = ruleMemberMappingRepository;
-        this.memberAdaptor = memberAdaptor;
-    }
+    private final TriggerRepository triggerRepository;
 
     @Override
     public RuleResponse registerRule(RuleRegisterRequest request) {
@@ -83,6 +76,11 @@ public class RuleServiceImpl implements RuleService {
                 request.getRulePriority()
         );
         log.debug("registerRule rule : {}", rule);
+
+        TriggerEvent trigger = triggerRepository.save(TriggerEvent.ofNewTriggerEvent(rule, "AI_DATA_RECEIVED", "{\"source\":\"AI\"}"));
+        log.debug("registerRule trigger : {}", trigger);
+
+        rule.getTriggerEventList().add(trigger);
 
         MemberResponse memberResponse = response.getBody();
         log.debug("registerRule member : {}", memberResponse);

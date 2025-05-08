@@ -5,6 +5,7 @@ import com.nhnacademy.ruleengineservice.auth.MemberThreadLocal;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleMemberMapping;
+import com.nhnacademy.ruleengineservice.domain.trigger.TriggerEvent;
 import com.nhnacademy.ruleengineservice.dto.member.MemberResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
@@ -17,6 +18,7 @@ import com.nhnacademy.ruleengineservice.exception.rule.RulePersistException;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleMemberMappingRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
+import com.nhnacademy.ruleengineservice.repository.trigger.TriggerRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,9 @@ class RuleServiceImplTest {
     @Mock
     private MemberAdaptor memberAdaptor;
 
+    @Mock
+    private TriggerRepository triggerRepository;
+
     @InjectMocks
     private RuleServiceImpl ruleService;
 
@@ -78,6 +83,12 @@ class RuleServiceImplTest {
         Rule rule = Rule.ofNewRule(group, ruleName, ruleDescription, rulePriority);
         setField(rule, "ruleNo", 10L);
 
+        TriggerEvent event = TriggerEvent.ofNewTriggerEvent(
+                rule,
+                "AI_DATA_RECEIVED",
+                "{\"source\":\"AI\"}"
+        );
+
         MemberResponse memberResponse = new MemberResponse(
                 2L,
                 "ROLE_USER",
@@ -94,6 +105,7 @@ class RuleServiceImplTest {
 
         when(ruleGroupRepository.findById(ruleGroupNo)).thenReturn(Optional.of(group));
         when(ruleRepository.save(Mockito.any())).thenReturn(rule);
+        when(triggerRepository.save(Mockito.any())).thenReturn(event);
         when(memberAdaptor.getMemberByEmail(anyString())).thenReturn(ResponseEntity.ok(memberResponse));
 
         when(ruleMemberMappingRepository.save(Mockito.any())).thenReturn(ruleMemberMapping);

@@ -120,10 +120,10 @@ public class ActionServiceImpl implements ActionService {
         List<ActionResult> results = new ArrayList<>();
         for (Action action : actions) {
             ActionResult result = performAction(action.getActNo(), context);
+            log.debug("executeActionsForRule : {}", result);
+
             results.add(result);
         }
-
-        log.debug("executeActionsForRule : {}", results);
 
         return results;
     }
