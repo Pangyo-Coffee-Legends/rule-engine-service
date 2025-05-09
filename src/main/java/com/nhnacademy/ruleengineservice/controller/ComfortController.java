@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
+import com.nhnacademy.ruleengineservice.dto.engine.RuleEvaluationResult;
 import com.nhnacademy.ruleengineservice.service.engine.RuleEngineService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -26,7 +28,7 @@ public class ComfortController {
     }
 
     @PostMapping
-    public ResponseEntity<String> receiveComfortInfo(@RequestBody ComfortInfoDTO comfortInfo) {
+    public ResponseEntity<List<RuleEvaluationResult>> receiveComfortInfo(@RequestBody ComfortInfoDTO comfortInfo) {
         log.debug("받은 정보: {}", comfortInfo);
 
         Map<String, Object> facts = objectMapper.convertValue(
@@ -34,8 +36,8 @@ public class ComfortController {
                 new com.fasterxml.jackson.core.type.TypeReference<>() {}
         );
 
-        ruleEngineService.executeTriggeredRules("AI_DATA_RECEIVED", "{\"source\":\"AI\"}", facts);
+        List<RuleEvaluationResult> results = ruleEngineService.executeTriggeredRules("AI_DATA_RECEIVED", "{\"source\":\"AI\"}", facts);
 
-        return ResponseEntity.ok("데이터 정상 수신");
+        return ResponseEntity.ok(results);
     }
 }
