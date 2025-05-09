@@ -34,11 +34,11 @@ class WebMvcConfigTest {
     @DisplayName("Preflight 요청")
     void testCorsPreflightRequest() throws Exception {
         mockMvc.perform(options("/api/v1/rules")
-                        .header("Origin", "https://foreign-domain.com")
+                        .header("Origin", "https://aiot2.live")
                         .header("Access-Control-Request-Method", "GET")
                         .header("Access-Control-Request-Headers", "content-type"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "*"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://aiot2.live"))
                 .andExpect(header().string("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS"))
                 .andExpect(header().string("Access-Control-Allow-Headers", "content-type"));
     }
@@ -49,9 +49,9 @@ class WebMvcConfigTest {
         when(ruleService.getAllRule()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/rules")
-                .header("Origin", "https://foreign-domain.com"))
+                .header("Origin", "https://aiot2.live"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "*"));
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://aiot2.live"));
 
         verify(ruleService).getAllRule();
     }

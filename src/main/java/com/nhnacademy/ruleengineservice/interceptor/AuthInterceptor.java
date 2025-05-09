@@ -42,7 +42,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class AuthInterceptor implements HandlerInterceptor {
 
     /**
-
      * 요청 전처리: 인증된 사용자의 멤버 번호를 ThreadLocal에 저장합니다.
      *
      * @param request  현재 HTTP 요청 객체
