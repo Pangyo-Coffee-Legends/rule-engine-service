@@ -3,7 +3,6 @@ package com.nhnacademy.ruleengineservice.adaptor;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.nhnacademy.ruleengineservice.dto.member.MemberInfoResponse;
 import com.nhnacademy.ruleengineservice.dto.member.MemberResponse;
-import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +12,6 @@ import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
@@ -22,18 +20,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 @SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "member-service.url=http://localhost:${wiremock.server.port}",
-                "feign.client.config.defalut.loggerLever=full"
+                "feign.client.config.defalut.loggerLevel=full"
         }
 )
 @AutoConfigureWireMock(port=0)
 @ActiveProfiles("test")
 class MemberAdaptorTest {
-
-    @MockitoBean
-    private ActionService actionService;
 
     @Autowired
     private MemberAdaptor memberAdaptor;
