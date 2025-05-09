@@ -1,5 +1,6 @@
 package com.nhnacademy.ruleengineservice.dto.comfort;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
 import java.time.LocalDateTime;
@@ -37,10 +38,12 @@ public class ComfortInfoDTO {
     /**
      * ai 온도, 습도 설명
      */
+    @JsonProperty("comport-index")
     String comportIndex;
 
     /**
      * ai co2 설명
      */
+    @JsonProperty("co2-comment")
     String co2Comment;
 }
