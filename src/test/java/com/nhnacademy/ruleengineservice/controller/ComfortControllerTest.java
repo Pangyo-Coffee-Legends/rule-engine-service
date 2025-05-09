@@ -2,11 +2,9 @@ package com.nhnacademy.ruleengineservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
-import com.nhnacademy.ruleengineservice.dto.engine.RuleEvaluationResult;
-import com.nhnacademy.ruleengineservice.service.engine.RuleEngineService;
+import com.nhnacademy.ruleengineservice.schedule.ComfortInfoBuffer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -15,12 +13,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ComfortController.class)
@@ -31,7 +27,7 @@ class ComfortControllerTest {
     MockMvc mockMvc;
 
     @MockitoBean
-    RuleEngineService ruleEngineService;
+    private ComfortInfoBuffer buffer;
 
     @Autowired
     ObjectMapper objectMapper;
@@ -49,27 +45,12 @@ class ComfortControllerTest {
                 "CO2 주의"
         );
 
-        RuleEvaluationResult result = new RuleEvaluationResult(
-                1L,
-                "Test Rule",
-                true
-        );
-
-        List<RuleEvaluationResult> results = List.of(result);
-
-        Mockito.when(ruleEngineService.executeTriggeredRules(
-                eq("AI_DATA_RECEIVED"),
-                eq("{\"source\":\"AI\"}"),
-                any()
-        )).thenReturn(results);
-
-        String requestJson = objectMapper.writeValueAsString(comfortInfo);
-        String responseJson = objectMapper.writeValueAsString(results);
-
         mockMvc.perform(post("/api/v1/comfort")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestJson))
-                .andExpect(status().isOk())
-                .andExpect(content().json(responseJson));
+                        .content(objectMapper.writeValueAsString(comfortInfo)))
+                .andExpect(status().isOk());
+
+        // buffer.add 가 호출됐는지 검증
+        verify(buffer).add(any(ComfortInfoDTO.class));
     }
 }
