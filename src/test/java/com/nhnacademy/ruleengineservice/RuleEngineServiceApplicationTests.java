@@ -1,8 +1,6 @@
 package com.nhnacademy.ruleengineservice;
 
-import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.QueryApi;
-import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,16 +21,6 @@ import static org.mockito.Mockito.when;
         })
 class RuleEngineServiceApplicationTests {
 
-    @MockitoBean
-    private ActionService actionService;
-
-    /**
-     * InfluxDBClient 를 Spring ApplicationContext 에 Mockito Mock 객체로 주입합니다.
-     * 즉, QueryAPi 대신 Mock 객체가 주입됩니다.
-     */
-    @MockitoBean
-    private InfluxDBClient influxDBClient;
-
     /**
      * QueryApi 를 Spring ApplicationContext 에 Mockito Mock 객체로 주입합니다.
      * 즉, QueryAPi 대신 Mock 객체가 주입됩니다.
@@ -50,7 +38,6 @@ class RuleEngineServiceApplicationTests {
     @Test
     void contextLoads() {
         Assertions.assertNotNull(context);
-        when(influxDBClient.getQueryApi()).thenReturn(queryApi);
         when(queryApi.query(anyString())).thenReturn(List.of());
     }
 }

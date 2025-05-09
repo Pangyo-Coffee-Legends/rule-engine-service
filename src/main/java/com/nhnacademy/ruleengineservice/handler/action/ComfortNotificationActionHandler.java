@@ -6,7 +6,9 @@ import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
 import com.nhnacademy.ruleengineservice.exception.action.ActionHandlerException;
 import com.nhnacademy.ruleengineservice.handler.ActionHandler;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -15,13 +17,11 @@ import java.util.Objects;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ComfortNotificationActionHandler implements ActionHandler {
 
+    @Lazy
     private final ActionService actionService;
-
-    public ComfortNotificationActionHandler(ActionService actionService) {
-        this.actionService = actionService;
-    }
 
     @Override
     public boolean supports(String actType) {
