@@ -19,8 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +32,8 @@ class ComfortNotificationActionHandlerTest {
     @Mock
     ActionService actionService;
 
+    Rule rule;
+
     @Test
     void supports() {
         assertTrue(handler.supports("COMFORT_NOTIFICATION"));
@@ -42,7 +43,7 @@ class ComfortNotificationActionHandlerTest {
     @Test
     @DisplayName("덥고 습함 케이스")
     void handle_withComportIndexHotHumid() {
-        Rule rule = mock();
+        rule = mock();
 
         Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "알림2", 2);
         setField(action, 1L);
@@ -69,9 +70,46 @@ class ComfortNotificationActionHandlerTest {
     }
 
     @Test
+    @DisplayName("덥고 습함, CO2 주의 케이스")
+    void handle_withComportIndexAndCo2Comment() {
+        rule = mock();
+
+        Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "testType", 2);
+        setField(action, 1L);
+        Map<String, Object> context = new HashMap<>();
+        context.put("comport_index", "덥고 습함");
+        context.put("co2_comment", "CO2 주의");
+
+        ActionResponse mockResponse = new ActionResponse(
+                1L, // actNo
+                100L, // ruleNo
+                "AIR_CONTROL", // actType
+                "SET_TEMP_24", // actParam
+                1 // actPriority
+        );
+        when(actionService.getAction(1L)).thenReturn(mockResponse);
+
+        ActionResult result = handler.handle(action, context);
+
+        verify(actionService).getAction(1L);
+
+        assertEquals(1L, result.getActNo());
+        assertTrue(result.isSuccess());
+        assertEquals("COMFORT_NOTIFICATION", result.getActType());
+        assertEquals("쾌적도 알림 전송 성공", result.getMessage());
+
+        // 명시적 캐스팅 후 get() 사용
+        Map<String, Object> output = (Map<String, Object>) result.getOutput();
+        assertTrue((Boolean) output.get("aircon"));
+        assertTrue((Boolean) output.get("dehumidifier"));
+        assertTrue((Boolean) output.get("ventilator"));
+        assertEquals("SET_TEMP_24", output.get("action"));
+    }
+
+    @Test
     @DisplayName("춥고 건조 케이스")
     void handle_withComportIndexColdDry() {
-        Rule rule = mock();
+        rule = mock();
         Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "heater", 1);
         setField(action, 2L);
 
@@ -91,7 +129,7 @@ class ComfortNotificationActionHandlerTest {
     @Test
     @DisplayName("최적 쾌적 케이스")
     void handle_withComportIndexOptimal() {
-        Rule rule = mock();
+        rule = mock();
         Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "eco_mode", 1);
         setField(action, 3L);
 
@@ -114,7 +152,7 @@ class ComfortNotificationActionHandlerTest {
     @Test
     @DisplayName("알수없는 쾌적 지수")
     void handle_withUnknownComportIndex() {
-        Rule rule = mock();
+        rule = mock();
         Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "eco_mode", 1);
         setField(action, 4L);
 
@@ -134,7 +172,7 @@ class ComfortNotificationActionHandlerTest {
     @Test
     @DisplayName("컨텍스트에 쾌적지수 없음")
     void handle_withoutComportIndex() {
-        Rule rule = mock();
+        rule = mock();
         Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "eco_mode", 1);
         setField(action, 5L);
 

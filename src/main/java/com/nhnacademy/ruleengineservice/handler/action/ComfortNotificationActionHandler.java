@@ -43,6 +43,12 @@ public class ComfortNotificationActionHandler implements ActionHandler {
             context.putAll(deviceCommands);
         }
 
+        // ventilator : 환풍기
+        String co2Comment = (String) context.get("co2_comment");
+        if (Objects.nonNull(co2Comment)) {
+            context.put("ventilator", "CO2 주의".equals(co2Comment));
+        }
+
         ActionResponse response = actionService.getAction(action.getActNo());
 
         if (Objects.nonNull(response)) {
