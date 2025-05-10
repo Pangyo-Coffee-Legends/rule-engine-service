@@ -23,7 +23,7 @@ public class ComfortScheduler {
 
     private final ObjectMapper objectMapper;
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(fixedDelay = 30000) // 30초 간격으로 데이터 전송
     public void processComfortInfos() {
         List<ComfortInfoDTO> infos = buffer.drainAll();
         List<RuleEvaluationResult> allResults = new ArrayList<>();
