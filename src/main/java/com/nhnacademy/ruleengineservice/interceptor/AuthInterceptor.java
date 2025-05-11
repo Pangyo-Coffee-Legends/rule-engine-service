@@ -54,6 +54,12 @@ public class AuthInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        // 인증 정보가 없으면 바로 403 반환
+        if (authentication == null) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
+            return false;
+        }
+
         if (isAuthenticated(authentication)) {
             MemberDetails memberDetails = (MemberDetails) authentication.getPrincipal();
             log.debug("memberDetails : {}", memberDetails);
@@ -78,7 +84,7 @@ public class AuthInterceptor implements HandlerInterceptor {
      * @throws Exception 내부 예외 발생 시 상위 계층으로 전파
      */
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         MemberThreadLocal.removedMemberEmail();
         log.debug("memberThreadLocal remove success!");
     }
