@@ -16,6 +16,9 @@ public class SecurityConfig {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable) // API 서버는 비활성화
+                .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin()) // sameOrigin 허용
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toH2Console()).permitAll()
                         .requestMatchers(
@@ -24,6 +27,8 @@ public class SecurityConfig {
                                 "/api/v1/rule-groups/**",
                                 "/api/v1/rules/**",
                                 "/api/v1/rule-engine/**",
+                                "/api/v1/conditions/**",
+                                "/api/v1/actions/**",
                                 "/h2/**",
                                 "/favicon.ico",
                                 "/error"

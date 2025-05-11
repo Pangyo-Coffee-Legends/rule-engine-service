@@ -37,7 +37,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v1/comfort/**",
                         "/api/v1/rules/**",
                         "/api/v1/rule-groups/**",
-                        "/api/v1/rule-engine/**"
+                        "/api/v1/rule-engine/**",
+                        "/api/v1/conditions/**",
+                        "/api/v1/actions/**"
                 );
     }
 
