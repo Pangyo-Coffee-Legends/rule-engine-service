@@ -3,8 +3,10 @@ package com.nhnacademy.ruleengineservice.controller;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,12 +32,14 @@ public class ConditionController {
      * @throws IllegalArgumentException 유효하지 않은 입력 값이 전달된 경우
      */
     @PostMapping
-    public ResponseEntity<ConditionResponse> registerCondition(@RequestBody ConditionRegisterRequest request) {
+    public ResponseEntity<ConditionResponse> registerCondition(@Valid @RequestBody ConditionRegisterRequest request) {
         ConditionResponse response = conditionService.registerCondition(request);
 
         log.debug("register condition : {}", response);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     /**

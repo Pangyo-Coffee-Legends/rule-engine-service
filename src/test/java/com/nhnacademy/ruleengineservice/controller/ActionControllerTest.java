@@ -69,7 +69,7 @@ class ActionControllerTest {
         mockMvc.perform(post("/api/v1/actions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.actNo").value(1L));
     }
 

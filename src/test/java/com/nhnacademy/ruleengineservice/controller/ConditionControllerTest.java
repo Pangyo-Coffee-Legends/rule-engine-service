@@ -70,7 +70,7 @@ class ConditionControllerTest {
         mockMvc.perform(post("/api/v1/conditions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.conField").value("TEST Condition"));
     }
 

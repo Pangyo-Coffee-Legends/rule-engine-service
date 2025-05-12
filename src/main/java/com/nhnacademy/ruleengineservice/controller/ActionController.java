@@ -5,6 +5,7 @@ import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +33,9 @@ public class ActionController {
         ActionResponse response = actionService.registerAction(request);
 
         log.debug("register action : {}", response);
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     /**

@@ -4,7 +4,9 @@ import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupUpdateRequest;
 import com.nhnacademy.ruleengineservice.service.rule.RuleGroupService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,12 +52,14 @@ public class RuleGroupController {
      * @return 등록된 규칙 그룹 정보
      */
     @PostMapping
-    public ResponseEntity<RuleGroupResponse> registerRuleGroup(@RequestBody RuleGroupRegisterRequest request) {
+    public ResponseEntity<RuleGroupResponse> registerRuleGroup(@Valid @RequestBody RuleGroupRegisterRequest request) {
         RuleGroupResponse response = ruleGroupService.registerRuleGroup(request);
 
         log.debug("registerRuleGroup : {}", response);
         
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     /**
@@ -84,7 +88,8 @@ public class RuleGroupController {
 
         log.debug("getRuleGroups : {}", groups);
 
-        return ResponseEntity.ok(groups);
+        return ResponseEntity
+                .ok(groups);
     }
 
     @PutMapping("/{ruleGroupNo}")
@@ -96,7 +101,9 @@ public class RuleGroupController {
 
         log.debug("updated rule group : {}", response);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .body(response);
     }
 
     /**
@@ -111,6 +118,8 @@ public class RuleGroupController {
 
         log.debug("deleteRuleGroup run");
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }
