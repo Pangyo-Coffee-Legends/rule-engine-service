@@ -2,7 +2,9 @@ package com.nhnacademy.ruleengineservice.dto.condition;
 
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotNull;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 조건(Condition) 등록 요청을 위한 DTO 클래스입니다.
@@ -23,7 +25,9 @@ import lombok.Value;
  *
  * @author 강승우
  */
-@Value
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ConditionRegisterRequest {
 
     /**
