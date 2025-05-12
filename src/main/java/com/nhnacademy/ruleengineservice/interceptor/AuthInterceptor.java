@@ -1,15 +1,14 @@
 package com.nhnacademy.ruleengineservice.interceptor;
 
 import com.nhnacademy.ruleengineservice.auth.MemberThreadLocal;
-import com.nhnacademy.ruleengineservice.dto.member.MemberDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+
+import java.util.Objects;
 
 /**
  * Spring MVC 인터셉터로, 인증된 사용자의 멤버 정보를 ThreadLocal에 저장 및 관리합니다.
@@ -52,26 +51,17 @@ public class AuthInterceptor implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = request.getHeader("X-USER");
 
-        // 인증 정보가 없으면 바로 403 반환
-        if (authentication == null) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
+        if (Objects.isNull(email) || email.isBlank()) {
+            log.error("registerRule unauthorized");
+            response.sendError(HttpStatus.FORBIDDEN.value(), "로그인 해주세요");
             return false;
         }
 
-        if (isAuthenticated(authentication)) {
-            MemberDetails memberDetails = (MemberDetails) authentication.getPrincipal();
-            log.debug("memberDetails : {}", memberDetails);
+        MemberThreadLocal.setMemberEmail(email);
 
-            String mbEmail = memberDetails.getUsername();
-            MemberThreadLocal.setMemberEmail(mbEmail);
-
-            return true;
-        }
-
-        log.warn("preHandle fail!");
-        return false;
+        return true;
     }
 
     /**
@@ -87,15 +77,5 @@ public class AuthInterceptor implements HandlerInterceptor {
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         MemberThreadLocal.removedMemberEmail();
         log.debug("memberThreadLocal remove success!");
-    }
-
-    /**
-     * 인증 상태를 확인합니다.
-     *
-     * @param authentication Spring Security 인증 객체
-     * @return 인증되었고 익명 사용자가 아닌 경우 true, 그 외 false
-     */
-    private boolean isAuthenticated(Authentication authentication) {
-        return authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken);
     }
 }

@@ -1,93 +1,85 @@
 package com.nhnacademy.ruleengineservice.interceptor;
 
 import com.nhnacademy.ruleengineservice.auth.MemberThreadLocal;
-import com.nhnacademy.ruleengineservice.dto.member.MemberDetails;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class AuthInterceptorTest {
 
     private AuthInterceptor authInterceptor;
 
-    @Mock
-    private HttpServletRequest request;
+    private MockHttpServletRequest request;
 
-    @Mock
-    private HttpServletResponse response;
+    private MockHttpServletResponse response;
 
-    private AutoCloseable closeable;
+    private final Object handler = new Object();
 
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
         authInterceptor = new AuthInterceptor();
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
+        MemberThreadLocal.removedMemberEmail();
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        SecurityContextHolder.clearContext();
+    void tearDown() {
         MemberThreadLocal.removedMemberEmail();
-        closeable.close();
     }
 
     @Test
     @DisplayName("Interceptor 성공")
     void preHandle() throws Exception {
-        MemberDetails memberDetails = mock();
-        when(memberDetails.getUsername()).thenReturn("test@test.com");
+        // 요청헤드에서 이메일 꺼내서 등록 MemberThreadLocal 에 등록
+        String testEmail = "user@example.com";
+        request.addHeader("X-USER", testEmail);
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                memberDetails, null, memberDetails.getAuthorities()
-        );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        boolean result = authInterceptor.preHandle(request, response, new Object());
+        boolean result = authInterceptor.preHandle(request, response, handler);
 
         assertTrue(result);
-        assertEquals("test@test.com", MemberThreadLocal.getMemberEmail());
+        assertEquals(testEmail, MemberThreadLocal.getMemberEmail());
+        assertEquals(200, response.getStatus());
     }
 
     @Test
-    @DisplayName("interceptor 인증 실패")
+    @DisplayName("헤더가 없는 경우")
     void preHandle_notAuthenticated_returnsFalse() throws Exception {
-        List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS");
-
-        Authentication authentication = new AnonymousAuthenticationToken(
-                "key", "anonymousUser", authorities);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        boolean result = authInterceptor.preHandle(request, response, new Object());
+        boolean result = authInterceptor.preHandle(request, response, handler);
 
         assertFalse(result);
+        assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatus());
+        assertTrue(Objects.isNull(MemberThreadLocal.getMemberEmail()));
+    }
+
+    @Test
+    @DisplayName("빈 헤더인 경우")
+    void preHandle_blankHeader_shouldReturnForbidden() throws Exception {
+        request.addHeader("X-USER", "   ");
+
+        boolean result = authInterceptor.preHandle(request, response, handler);
+
+        assertFalse(result);
+        assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatus());
+        assertNull(MemberThreadLocal.getMemberEmail());
     }
 
     @Test
     @DisplayName("삭제 됐는지 확인")
-    void afterCompletion_clearsThreadLocal() throws Exception {
-        MemberThreadLocal.setMemberEmail("test@test.com");
-        authInterceptor.afterCompletion(request, response, new Object(), null);
+    void afterCompletion_clearsThreadLocal() {
+        String testEmail = "user@example.com";
+        MemberThreadLocal.setMemberEmail(testEmail);
+
+        authInterceptor.afterCompletion(request, response, handler, null);
+
         assertNull(MemberThreadLocal.getMemberEmail());
     }
 }
