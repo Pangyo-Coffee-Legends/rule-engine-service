@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.service.rule;
 
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupResponse;
+import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupUpdateRequest;
 
 import java.util.List;
 
@@ -31,6 +32,14 @@ public interface RuleGroupService {
      * @return 생성된 규칙 그룹의 응답 DTO
      */
     RuleGroupResponse registerRuleGroup(RuleGroupRegisterRequest request);
+
+    /**
+     * 규칙 그룹 정보를 수정합니다.
+     *
+     * @param no 수정할 규칙의 식별자
+     * @param request 수정 요청 DTO
+     */
+    RuleGroupResponse updateRuleGroup(Long no, RuleGroupUpdateRequest request);
 
     /**
      * 규칙 그룹을 삭제합니다.

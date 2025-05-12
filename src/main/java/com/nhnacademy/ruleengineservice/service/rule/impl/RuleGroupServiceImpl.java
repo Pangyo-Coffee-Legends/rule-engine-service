@@ -3,6 +3,7 @@ package com.nhnacademy.ruleengineservice.service.rule.impl;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupResponse;
+import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupUpdateRequest;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupAlreadyExistsException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
@@ -39,6 +40,22 @@ public class RuleGroupServiceImpl implements RuleGroupService {
         log.debug("registerRuleGroup group : {}", group);
 
         return toRuleGroupResponse(ruleGroupRepository.save(group));
+    }
+
+    @Override
+    public RuleGroupResponse updateRuleGroup(Long no, RuleGroupUpdateRequest request) {
+        RuleGroup ruleGroup = ruleGroupRepository.findById(no)
+                .orElseThrow(() -> new RuleGroupNotFoundException(no));
+
+        ruleGroup.ruleGroupUpdate(
+                request.getRuleGroupName(),
+                request.getRuleGroupDescription(),
+                request.getPriority()
+        );
+
+        log.debug("update rule group : {}", ruleGroup);
+
+        return toRuleGroupResponse(ruleGroup);
     }
 
     @Override

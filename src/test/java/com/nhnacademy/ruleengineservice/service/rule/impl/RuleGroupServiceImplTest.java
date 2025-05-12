@@ -3,6 +3,7 @@ package com.nhnacademy.ruleengineservice.service.rule.impl;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupResponse;
+import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupUpdateRequest;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupAlreadyExistsException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 @DataJpaTest
@@ -42,11 +44,11 @@ class RuleGroupServiceImplTest {
 
         RuleGroupRegisterRequest request = new RuleGroupRegisterRequest(groupName, description, priority);
 
-        Mockito.when(ruleGroupRepository.existsByRuleGroupName(Mockito.anyString())).thenReturn(false);
+        when(ruleGroupRepository.existsByRuleGroupName(Mockito.anyString())).thenReturn(false);
 
         RuleGroup group = RuleGroup.ofNewRuleGroup(groupName, description, priority);
 
-        Mockito.when(ruleGroupRepository.save(Mockito.any())).thenReturn(group);
+        when(ruleGroupRepository.save(Mockito.any())).thenReturn(group);
 
         RuleGroupResponse response = ruleGroupService.registerRuleGroup(request);
         log.debug("registerRuleGroup : {}", response);
@@ -66,13 +68,54 @@ class RuleGroupServiceImplTest {
 
         RuleGroupRegisterRequest request = new RuleGroupRegisterRequest(duplicateName, "설명", 1);
 
-        Mockito.when(ruleGroupRepository.existsByRuleGroupName(Mockito.anyString())).thenReturn(true);
+        when(ruleGroupRepository.existsByRuleGroupName(Mockito.anyString())).thenReturn(true);
 
-        assertThrows(RuleGroupAlreadyExistsException.class, () -> {
-            ruleGroupService.registerRuleGroup(request);
-        });
+        assertThrows(RuleGroupAlreadyExistsException.class, () -> ruleGroupService.registerRuleGroup(request));
 
         Mockito.verify(ruleGroupRepository, Mockito.times(1)).existsByRuleGroupName(Mockito.anyString());
+    }
+
+    @Test
+    @DisplayName("update rule group - success")
+    void updateRuleGroup() {
+        Long ruleGroupNo = 1L;
+        String updateName = "수정된 그룹 규칙";
+        String updatedDescription = "수정된 그룹 설명";
+        Integer updatedPriority = 2;
+
+        RuleGroupUpdateRequest request = new RuleGroupUpdateRequest(updateName, updatedDescription, updatedPriority);
+
+        RuleGroup existingRuleGroup = RuleGroup.ofNewRuleGroup(
+                "원래 이름",
+                "원래 섦명",
+                1
+        );
+        setField(existingRuleGroup, "ruleGroupNo", ruleGroupNo);
+
+        when(ruleGroupRepository.findById(ruleGroupNo)).thenReturn(Optional.of(existingRuleGroup));
+
+        RuleGroupResponse response = ruleGroupService.updateRuleGroup(ruleGroupNo, request);
+        log.debug("updated rule group : {}", response);
+
+        assertNotNull(response);
+        assertAll(
+                () -> assertEquals(ruleGroupNo, response.getRuleGroupNo()),
+                () -> assertEquals(updateName, response.getRuleGroupName()),
+                () -> assertEquals(updatedDescription, response.getRuleGroupDescription()),
+                () -> assertEquals(updatedPriority, response.getPriority())
+        );
+    }
+
+    @Test
+    @DisplayName("update rule group - exception")
+    void updateRuleGroup_exception() {
+        Long nonExistentRuleGroupNo = 1313L;
+        RuleGroupUpdateRequest request = new RuleGroupUpdateRequest(
+                "수정 규칙", "수정 설명", 1);
+
+        when(ruleGroupRepository.findById(nonExistentRuleGroupNo)).thenReturn(Optional.empty());
+
+        assertThrows(RuleGroupNotFoundException.class, () -> ruleGroupService.updateRuleGroup(nonExistentRuleGroupNo, request));
     }
 
     @Test
@@ -80,7 +123,7 @@ class RuleGroupServiceImplTest {
     void deleteRuleGroup() {
         Long ruleGroupNo = 1L;
 
-        Mockito.when(ruleGroupRepository.existsById(Mockito.anyLong())).thenReturn(true);
+        when(ruleGroupRepository.existsById(Mockito.anyLong())).thenReturn(true);
 
         ruleGroupService.deleteRuleGroup(ruleGroupNo);
 
@@ -92,11 +135,9 @@ class RuleGroupServiceImplTest {
     void deleteRuleGroup_exception() {
         Long ruleGroupNo = 2323L;
 
-        Mockito.when(ruleGroupRepository.existsById(ruleGroupNo)).thenReturn(false);
+        when(ruleGroupRepository.existsById(ruleGroupNo)).thenReturn(false);
 
-        assertThrows(RuleGroupNotFoundException.class, () -> {
-            ruleGroupService.deleteRuleGroup(ruleGroupNo);
-        });
+        assertThrows(RuleGroupNotFoundException.class, () -> ruleGroupService.deleteRuleGroup(ruleGroupNo));
 
         Mockito.verify(ruleGroupRepository, Mockito.never()).deleteById(ruleGroupNo);
     }
@@ -111,7 +152,7 @@ class RuleGroupServiceImplTest {
         );
         setField(ruleGroup, "ruleGroupNo", 1L);
 
-        Mockito.when(ruleGroupRepository.findById(Mockito.anyLong())).thenReturn(Optional.of(ruleGroup));
+        when(ruleGroupRepository.findById(Mockito.anyLong())).thenReturn(Optional.of(ruleGroup));
 
         RuleGroupResponse response = ruleGroupService.getRuleGroup(1L);
         log.debug("getRuleGroup : {}", response);
@@ -130,11 +171,9 @@ class RuleGroupServiceImplTest {
     void getRuleGroup_exception() {
         Long ruleGroupNo = 1352L;
 
-        Mockito.when(ruleGroupRepository.findById(Mockito.anyLong())).thenReturn(Optional.empty());
+        when(ruleGroupRepository.findById(Mockito.anyLong())).thenReturn(Optional.empty());
 
-        assertThrows(RuleGroupNotFoundException.class, () -> {
-            ruleGroupService.getRuleGroup(ruleGroupNo);
-        });
+        assertThrows(RuleGroupNotFoundException.class, () -> ruleGroupService.getRuleGroup(ruleGroupNo));
     }
 
     @Test
@@ -148,7 +187,7 @@ class RuleGroupServiceImplTest {
         mockList.add(group1);
         mockList.add(group2);
 
-        Mockito.when(ruleGroupRepository.findAll()).thenReturn(mockList);
+        when(ruleGroupRepository.findAll()).thenReturn(mockList);
 
         List<RuleGroupResponse> responses = ruleGroupService.getAllRuleGroups();
         log.debug("getAllRuleGroups : {}", responses);
@@ -164,11 +203,9 @@ class RuleGroupServiceImplTest {
     @Test
     @DisplayName("getAllRuleGroups - exception")
     void getAllRuleGroups_exception() {
-        Mockito.when(ruleGroupRepository.findAll()).thenReturn(new ArrayList<>());
+        when(ruleGroupRepository.findAll()).thenReturn(new ArrayList<>());
 
-        assertThrows(RuleGroupNotFoundException.class, () -> {
-            ruleGroupService.getAllRuleGroups();
-        });
+        assertThrows(RuleGroupNotFoundException.class, () -> ruleGroupService.getAllRuleGroups());
     }
 
     @Test
@@ -179,8 +216,8 @@ class RuleGroupServiceImplTest {
 
         RuleGroup group = RuleGroup.ofNewRuleGroup("R1","D1",1);
 
-        Mockito.when(ruleGroupRepository.findById(ruleGroupNo)).thenReturn(Optional.of(group));
-        Mockito.when(ruleGroupRepository.save(Mockito.any())).thenReturn(group);
+        when(ruleGroupRepository.findById(ruleGroupNo)).thenReturn(Optional.of(group));
+        when(ruleGroupRepository.save(Mockito.any())).thenReturn(group);
 
         ruleGroupService.setRuleGroupActive(ruleGroupNo, newActive);
 
@@ -194,11 +231,9 @@ class RuleGroupServiceImplTest {
         Long ruleGroupNo = 1425L;
         boolean newActive = true;
 
-        Mockito.when(ruleGroupRepository.findById(Mockito.anyLong())).thenReturn(Optional.empty());
+        when(ruleGroupRepository.findById(Mockito.anyLong())).thenReturn(Optional.empty());
 
-        assertThrows(RuleGroupNotFoundException.class, () -> {
-            ruleGroupService.setRuleGroupActive(ruleGroupNo, newActive);
-        });
+        assertThrows(RuleGroupNotFoundException.class, () -> ruleGroupService.setRuleGroupActive(ruleGroupNo, newActive));
 
         Mockito.verify(ruleGroupRepository, Mockito.never()).save(Mockito.any());
     }

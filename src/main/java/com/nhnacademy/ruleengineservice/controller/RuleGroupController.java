@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.controller;
 
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupResponse;
+import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupUpdateRequest;
 import com.nhnacademy.ruleengineservice.service.rule.RuleGroupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -84,6 +85,18 @@ public class RuleGroupController {
         log.debug("getRuleGroups : {}", groups);
 
         return ResponseEntity.ok(groups);
+    }
+
+    @PutMapping("/{ruleGroupNo}")
+    public ResponseEntity<RuleGroupResponse> updateRuleGroup(
+            @PathVariable("ruleGroupNo") Long ruleGroupNo,
+            @RequestBody RuleGroupUpdateRequest request
+            ) {
+        RuleGroupResponse response = ruleGroupService.updateRuleGroup(ruleGroupNo, request);
+
+        log.debug("updated rule group : {}", response);
+
+        return ResponseEntity.ok(response);
     }
 
     /**
