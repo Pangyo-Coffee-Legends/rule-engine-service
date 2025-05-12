@@ -3,15 +3,12 @@ package com.nhnacademy.ruleengineservice.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
-import com.nhnacademy.ruleengineservice.interceptor.AuthInterceptor;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -26,7 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @ActiveProfiles("test")
 @WebMvcTest(ActionController.class)
-@AutoConfigureMockMvc(addFilters = false)
 class ActionControllerTest {
 
     @Autowired
@@ -37,14 +33,6 @@ class ActionControllerTest {
 
     @MockitoBean
     ActionService actionService;
-
-    @MockitoBean
-    private AuthInterceptor authInterceptor;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        Mockito.when(authInterceptor.preHandle(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(true);
-    }
 
     @Test
     @DisplayName("액션 등록 성공")

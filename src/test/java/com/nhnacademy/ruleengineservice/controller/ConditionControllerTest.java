@@ -3,15 +3,12 @@ package com.nhnacademy.ruleengineservice.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
-import com.nhnacademy.ruleengineservice.interceptor.AuthInterceptor;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -25,7 +22,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @ActiveProfiles("test")
 @WebMvcTest(ConditionController.class)
-@AutoConfigureMockMvc(addFilters = false)
 class ConditionControllerTest {
 
     @Autowired
@@ -36,14 +32,6 @@ class ConditionControllerTest {
 
     @MockitoBean
     ConditionService conditionService;
-
-    @MockitoBean
-    private AuthInterceptor authInterceptor;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        Mockito.when(authInterceptor.preHandle(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(true);
-    }
 
     @Test
     @DisplayName("조건 등록 성공")
