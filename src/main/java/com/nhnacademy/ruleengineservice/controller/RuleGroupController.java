@@ -95,7 +95,7 @@ public class RuleGroupController {
     @PutMapping("/{ruleGroupNo}")
     public ResponseEntity<RuleGroupResponse> updateRuleGroup(
             @PathVariable("ruleGroupNo") Long ruleGroupNo,
-            @RequestBody RuleGroupUpdateRequest request
+            @Valid @RequestBody RuleGroupUpdateRequest request
             ) {
         RuleGroupResponse response = ruleGroupService.updateRuleGroup(ruleGroupNo, request);
 

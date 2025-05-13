@@ -18,6 +18,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -25,8 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Slf4j
 @ActiveProfiles("test")
@@ -96,6 +97,40 @@ class RuleControllerTest {
                 .andExpect(jsonPath("$.ruleNo").value(1))
                 .andExpect(jsonPath("$.ruleName").value("테스트 룰"))
                 .andDo(print());
+    }
+
+    @Test
+    @DisplayName("특정 그룹의 규칙 목록 조회 성공")
+    void getRulesByRuleGroup_Success() throws Exception {
+        Long groupNo = 10L;
+        RuleResponse rule1 = new RuleResponse(1L, "Rule1", "desc1", 1, true, groupNo,
+                List.of(), List.of(), List.of(), List.of(), List.of());
+        RuleResponse rule2 = new RuleResponse(2L, "Rule2", "desc2", 2, true, groupNo,
+                List.of(), List.of(), List.of(), List.of(), List.of());
+
+        Mockito.when(ruleService.getRulesByGroup(groupNo))
+                .thenReturn(Arrays.asList(rule1, rule2));
+
+        mockMvc.perform(get("/api/v1/rules/group/{no}", groupNo)
+                        .header("X-USER", "USER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].ruleNo").value(1L))
+                .andExpect(jsonPath("$[1].ruleNo").value(2L));
+    }
+
+    @Test
+    @DisplayName("특정 그룹의 규칙 목록이 없을 때 빈 리스트 반환")
+    void getRulesByRuleGroup_Empty() throws Exception {
+        // Given
+        Long groupNo = 99L;
+        Mockito.when(ruleService.getRulesByGroup(groupNo))
+                .thenReturn(Collections.emptyList());
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/rules/group/{no}", groupNo)
+                        .header("X-USER", "USER"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
     }
 
     @Test

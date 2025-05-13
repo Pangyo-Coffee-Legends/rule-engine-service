@@ -3,6 +3,7 @@ package com.nhnacademy.ruleengineservice.controller;
 import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -29,7 +30,7 @@ public class ActionController {
      * @return 등록된 액션 정보를 담은 응답 DTO ({@link ActionResponse})
      */
     @PostMapping
-    public ResponseEntity<ActionResponse> registerAction(@RequestBody ActionRegisterRequest request) {
+    public ResponseEntity<ActionResponse> registerAction(@Valid @RequestBody ActionRegisterRequest request) {
         ActionResponse response = actionService.registerAction(request);
 
         log.debug("register action : {}", response);

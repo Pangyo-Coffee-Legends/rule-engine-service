@@ -63,6 +63,16 @@ public class RuleController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/group/{no}")
+    public ResponseEntity<List<RuleResponse>> getRulesByRuleGroup(@PathVariable Long no) {
+        List<RuleResponse> responseList = ruleService.getRulesByGroup(no);
+
+        log.debug("getRulesByRuleGroup : {}", responseList);
+
+        return ResponseEntity
+                .ok(responseList);
+    }
+
     /**
      * 규칙 목록을 조회합니다.
      *
@@ -86,7 +96,7 @@ public class RuleController {
      */
     @PutMapping("/{ruleNo}")
     public ResponseEntity<RuleResponse> updateRule(@PathVariable Long ruleNo,
-                                                   @RequestBody RuleUpdateRequest request) {
+                                                   @Valid @RequestBody RuleUpdateRequest request) {
         RuleResponse response = ruleService.updateRule(ruleNo, request);
 
         log.debug("updateRule : {}", response);
