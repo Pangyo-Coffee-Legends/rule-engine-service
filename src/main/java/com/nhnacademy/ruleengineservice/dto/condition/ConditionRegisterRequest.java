@@ -1,6 +1,6 @@
 package com.nhnacademy.ruleengineservice.dto.condition;
 
-import jakarta.persistence.Column;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -67,6 +67,6 @@ public class ConditionRegisterRequest {
      * 숫자가 낮을수록 높은 우선순위를 가집니다.
      * conditions 테이블의 con_priority 컬럼과 매핑됩니다.
      */
-    @Column(nullable = false)
+    @Min(value = 0, message = "0 이상이어야합니다.")
     Integer conPriority;
 }

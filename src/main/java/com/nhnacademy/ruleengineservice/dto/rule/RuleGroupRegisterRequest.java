@@ -1,8 +1,8 @@
 package com.nhnacademy.ruleengineservice.dto.rule;
 
 import jakarta.persistence.Column;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -51,6 +51,6 @@ public class RuleGroupRegisterRequest {
      * 숫자가 낮을수록 높은 우선순위를 가집니다.
      * rule_groups 테이블의 priority 컬럼과 매핑됩니다.
      */
-    @NotNull(message = "규칙 그룹 우선순위는 필수 항목입니다.")
+    @Min(value = 0, message = "규칙 그룹 우선순위는 필수 항목입니다.")
     Integer priority;
 }
