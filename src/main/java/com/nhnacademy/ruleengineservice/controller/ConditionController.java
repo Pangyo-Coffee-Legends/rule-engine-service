@@ -60,6 +60,11 @@ public class ConditionController {
                 .ok(condition);
     }
 
+    /**
+     * 모든 조건 정보를 조회합니다.
+     *
+     * @return HTTP 200 OK 상태와 함께 전체 조건 응답 정보 리스트를 반환합니다.
+     */
     @GetMapping
     public ResponseEntity<List<ConditionResponse>> getConditions() {
         List<ConditionResponse> responses = conditionService.getConditions();
@@ -69,6 +74,12 @@ public class ConditionController {
         return ResponseEntity.ok(responses);
     }
 
+    /**
+     * 특정 규칙에 연결된 조건 정보를 조회합니다.
+     *
+     * @param ruleNo 조회할 규칙의 고유 번호
+     * @return HTTP 200 OK 상태와 함께 해당 규칙의 조건 응답 정보 리스트를 반환합니다.
+     */
     @GetMapping("/rule/{ruleNo}")
     public ResponseEntity<List<ConditionResponse>> getConditionByRule(@PathVariable("ruleNo") Long ruleNo) {
         List<ConditionResponse> responses = conditionService.getConditionsByRule(ruleNo);

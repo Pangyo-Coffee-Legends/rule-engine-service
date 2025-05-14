@@ -56,6 +56,11 @@ public class ActionController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 모든 액션 정보를 조회합니다.
+     *
+     * @return 액션 응답 정보 리스트와 HTTP 200 OK
+     */
     @GetMapping
     public ResponseEntity<List<ActionResponse>> getActions() {
         List<ActionResponse> responses = actionService.getActions();
@@ -65,6 +70,12 @@ public class ActionController {
         return ResponseEntity.ok(responses);
     }
 
+    /**
+     * 특정 규칙에 연결된 액션 정보를 조회합니다.
+     *
+     * @param ruleNo 조회할 규칙의 식별자
+     * @return 해당 규칙에 연결된 액션 응답 정보 리스트와 HTTP 200 OK
+     */
     @GetMapping("/rule/{ruleNo}")
     public ResponseEntity<List<ActionResponse>> getActionByRule(@PathVariable("ruleNo") Long ruleNo) {
         List<ActionResponse> responses = actionService.getActionsByRule(ruleNo);
