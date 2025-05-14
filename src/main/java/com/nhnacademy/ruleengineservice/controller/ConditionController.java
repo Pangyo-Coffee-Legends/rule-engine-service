@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 조건(Condition) 관련 HTTP 요청을 처리하는 컨트롤러입니다.
  * 조건 생성, 조회, 삭제 기능을 제공합니다.
@@ -56,6 +58,24 @@ public class ConditionController {
 
         return ResponseEntity
                 .ok(condition);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ConditionResponse>> getConditions() {
+        List<ConditionResponse> responses = conditionService.getConditions();
+
+        log.debug("get conditions : {}", responses);
+
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/rule/{ruleNo}")
+    public ResponseEntity<List<ConditionResponse>> getConditionByRule(@PathVariable("ruleNo") Long ruleNo) {
+        List<ConditionResponse> responses = conditionService.getConditionsByRule(ruleNo);
+
+        log.debug("get condition by rule : {}", responses);
+
+        return ResponseEntity.ok(responses);
     }
 
     /**

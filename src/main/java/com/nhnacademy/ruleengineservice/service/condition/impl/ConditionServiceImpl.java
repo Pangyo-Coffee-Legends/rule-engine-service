@@ -73,15 +73,23 @@ public class ConditionServiceImpl implements ConditionService {
     @Override
     @Transactional(readOnly = true)
     public List<ConditionResponse> getConditionsByRule(Long ruleNo) {
-        List<Condition> conditionList = conditionRepository.findAll();
+        Rule rule = ruleService.getRuleEntity(ruleNo);
 
-        if (conditionList.isEmpty()) {
-            log.error("getConditionsByRule condition list not found");
-            throw new ConditionNotFoundException("Condition List Not Found");
-        }
+        List<Condition> conditionList = conditionRepository.findByRule(rule);
 
         log.debug("conditionList : {}", conditionList);
 
+        return conditionList.stream()
+                .map(this::toConditionResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ConditionResponse> getConditions() {
+        List<Condition> conditionList = conditionRepository.findAll();
+
+        log.debug("get condition list : {}", conditionList);
         return conditionList.stream()
                 .map(this::toConditionResponse)
                 .toList();

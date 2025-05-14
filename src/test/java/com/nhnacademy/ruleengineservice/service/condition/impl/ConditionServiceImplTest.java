@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.service.condition.impl;
 
 import com.nhnacademy.ruleengineservice.domain.condition.Condition;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResult;
@@ -143,7 +144,45 @@ class ConditionServiceImplTest {
                 () -> assertEquals(1, response.getConPriority())
         );
     }
-    // 실패 추가
+
+    @Test
+    void getConditionsByRule_ValidRuleNo_ReturnsConditionResponses() {
+        Long ruleNo = 1L;
+        RuleGroup ruleGroup = mock();
+        Rule mockRule = Rule.ofNewRule(ruleGroup, "Test Rule", "Description", 1);
+        setField(mockRule, "ruleNo", ruleNo);
+        Condition condition1 = Condition.ofNewCondition(mockRule, "type1", "field1", "value1", 1);
+        Condition condition2 = Condition.ofNewCondition(mockRule, "type2", "field2", "value2", 2);
+        List<Condition> mockConditions = List.of(condition1, condition2);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findByRule(mockRule)).thenReturn(mockConditions);
+
+        List<ConditionResponse> result = conditionService.getConditionsByRule(ruleNo);
+
+        assertEquals(2, result.size());
+        assertEquals("field1", result.get(0).getConField());
+        assertEquals("type2", result.get(1).getConType());
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(conditionRepository).findByRule(mockRule);
+    }
+
+    @Test
+    void getConditions_ReturnsAllConditionResponses() {
+        Condition condition1 = Condition.ofNewCondition(rule, "type1", "field1", "value1", 1);
+        Condition condition2 = Condition.ofNewCondition(rule, "type2", "field2", "value2", 2);
+        List<Condition> mockConditions = List.of(condition1, condition2);
+
+        when(conditionRepository.findAll()).thenReturn(mockConditions);
+
+        List<ConditionResponse> result = conditionService.getConditions();
+
+        assertEquals(2, result.size());
+        assertEquals("field2", result.get(1).getConField());
+        verify(conditionRepository).findAll();
+    }
+
     @Test
     @DisplayName("조건 단건 조회 실패")
     void getCondition_exception() {
@@ -151,33 +190,6 @@ class ConditionServiceImplTest {
         when(conditionRepository.findById(nonExistentConditionNo)).thenReturn(Optional.empty());
 
         assertThrows(ConditionNotFoundException.class, () -> conditionService.getCondition(nonExistentConditionNo));
-    }
-
-    @Test
-    @DisplayName("규칙별 조건 목록 조회 성공")
-    void getConditionsByRule() {
-        List<Condition> mockConditions = new ArrayList<>();
-
-        Condition condition1 = Condition.ofNewCondition(rule, "EQ", "field1", "21", 1);
-        Condition condition2 = Condition.ofNewCondition(rule, "GT", "field2", "30", 1);
-
-        mockConditions.add(condition1);
-        mockConditions.add(condition2);
-
-        when(conditionRepository.findAll()).thenReturn(mockConditions);
-
-        List<ConditionResponse> responses = conditionService.getConditionsByRule(1L);
-
-        assertNotNull(responses);
-        assertEquals(2, responses.size());
-    }
-
-    @Test
-    @DisplayName("조건 리스트 조회 실패")
-    void getConditionsByRule_exception() {
-        when(conditionRepository.findAll()).thenReturn(Collections.emptyList());
-
-        assertThrows(ConditionNotFoundException.class, () -> conditionService.getConditionsByRule(1L));
     }
 
     @Test

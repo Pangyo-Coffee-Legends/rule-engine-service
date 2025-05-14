@@ -1,5 +1,6 @@
 package com.nhnacademy.ruleengineservice.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
@@ -14,7 +15,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,7 +58,7 @@ class ActionControllerTest {
                 1
         );
 
-        Mockito.when(actionService.registerAction(Mockito.any())).thenReturn(response);
+        when(actionService.registerAction(Mockito.any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/actions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,11 +78,57 @@ class ActionControllerTest {
                 1
         );
 
-        Mockito.when(actionService.getAction(1L)).thenReturn(response);
+        when(actionService.getAction(1L)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/actions/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.actNo").value(1L));
+    }
+
+    @Test
+    @DisplayName("모든 액션 조회")
+    void getActions_ReturnsActionList() throws Exception {
+        List<ActionResponse> mockResponses = List.of(
+                new ActionResponse(10L, 1L, "Alert", "Send email", 1),
+                new ActionResponse(20L, 2L, "Notification", "Push notification", 2)
+        );
+        when(actionService.getActions()).thenReturn(mockResponses);
+
+        MvcResult result = mockMvc.perform(get("/api/v1/actions"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ActionResponse> responses = objectMapper.readValue(
+                result.getResponse().getContentAsString(),
+                new TypeReference<List<ActionResponse>>() {}
+        );
+
+        assertEquals(2, responses.size());
+        verify(actionService, times(1)).getActions();
+    }
+
+    @Test
+    @DisplayName("룰에 해당하는 모든 조회")
+    void getActionByRule_ValidRuleNo_ReturnsActionList() throws Exception {
+        Long ruleNo = 1L;
+        List<ActionResponse> mockResponses = List.of(
+                new ActionResponse(1L, 20L,"Alert", "Rule1 Alert", 1),
+                new ActionResponse(2L, 20L,"Alert", "Rule2 Alert", 2)
+        );
+        when(actionService.getActionsByRule(ruleNo)).thenReturn(mockResponses);
+
+        MvcResult result = mockMvc.perform(get("/api/v1/actions/rule/{ruleNo}", ruleNo))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ActionResponse> responses = objectMapper.readValue(
+                result.getResponse().getContentAsString(),
+                new TypeReference<List<ActionResponse>>() {}
+        );
+
+        assertEquals(2, responses.size());
+        assertEquals("Alert", responses.get(0).getActType());
+        verify(actionService, times(1)).getActionsByRule(ruleNo);
     }
 
     @Test

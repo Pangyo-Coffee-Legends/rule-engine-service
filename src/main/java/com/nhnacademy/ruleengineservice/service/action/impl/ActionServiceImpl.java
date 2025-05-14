@@ -88,6 +88,17 @@ public class ActionServiceImpl implements ActionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ActionResponse> getActions() {
+        List<Action> actionList = actionRepository.findAll();
+
+        log.debug("get action list : {}", actionList);
+        return actionList.stream()
+                .map(this::toActionResponse)
+                .toList();
+    }
+
+    @Override
     public ActionResult performAction(Long actionNo, Map<String, Object> context) {
         Action action = actionRepository.findById(actionNo)
                 .orElseThrow(() -> new ActionNotFoundException(actionNo));

@@ -94,7 +94,7 @@ class WebMvcConfigTest {
                         .header("Access-Control-Request-Method", "POST"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
-                .andExpect(MockMvcResultMatchers.header().string("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS"))
+                .andExpect(MockMvcResultMatchers.header().string("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE"))
                 .andExpect(MockMvcResultMatchers.header().string("Access-Control-Allow-Credentials", "true"));
     }
 
@@ -107,7 +107,7 @@ class WebMvcConfigTest {
                         .header("Access-Control-Request-Headers", "content-type"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "https://aiot2.live"))
-                .andExpect(header().string("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS"))
+                .andExpect(header().string("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE"))
                 .andExpect(header().string("Access-Control-Allow-Headers", "content-type"));
     }
 }

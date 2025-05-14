@@ -56,6 +56,12 @@ public interface ActionService {
     List<ActionResponse> getActionsByRule(Long ruleNo);
 
     /**
+     * 액션 모두 조회
+     * @return 액션 응답 DTO 리스트
+     */
+    List<ActionResponse> getActions();
+
+    /**
      * 액션 실행(perform)
      * @param actionNo 액션 식별자
      * @param context 실행에 필요한 데이터(파라미터)

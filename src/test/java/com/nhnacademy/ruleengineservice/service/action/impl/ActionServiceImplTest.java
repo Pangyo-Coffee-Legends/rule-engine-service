@@ -138,35 +138,43 @@ class ActionServiceImplTest {
 
     @Test
     @DisplayName("규칙별 액션 목록 조회 성공")
-    void getActionsByRule() {
+    void getActionsByRule_ValidRuleNo_ReturnsActionResponses() {
         Long ruleNo = 1L;
-
-        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
-        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
-        setField(mockRule, "ruleNo", 1L);
-
-        List<Action> mockActions = new ArrayList<>();
-
-        Action action1 = Action.ofNewAction(mockRule, "EMAIL", "test@example.com", 1);
-        setField(action1, "actNo", 1L);
-
-        Action action2 = Action.ofNewAction(mockRule, "SMS", "합격했습니다.", 2);
-        setField(action2, "actNo", 2L);
-
-        mockActions.add(action1);
-        mockActions.add(action2);
+        RuleGroup ruleGroup = mock();
+        Rule mockRule = Rule.ofNewRule(ruleGroup, "Test Rule", "Description", 1);
+        Action action1 = Action.ofNewAction(mockRule, "ALERT", "Message1", 1);
+        Action action2 = Action.ofNewAction(mockRule, "NOTIFICATION", "Message2", 2);
+        List<Action> mockActions = List.of(action1, action2);
 
         when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
         when(actionRepository.findByRule(mockRule)).thenReturn(mockActions);
 
-        List<ActionResponse> responses = actionService.getActionsByRule(ruleNo);
+        List<ActionResponse> result = actionService.getActionsByRule(ruleNo);
 
-        assertNotNull(responses);
-        assertAll(
-                () -> assertEquals(2, responses.size()),
-                () -> assertEquals("EMAIL", responses.get(0).getActType()),
-                () -> assertEquals("SMS", responses.get(1).getActType())
-        );
+        assertEquals(2, result.size());
+        assertEquals("ALERT", result.get(0).getActType());
+        assertEquals("NOTIFICATION", result.get(1).getActType());
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(actionRepository).findByRule(mockRule);
+    }
+
+    @Test
+    @DisplayName("모든 액션 조회")
+    void getActions_ReturnsAllActionResponses() {
+        Rule rule = mock();
+        Action action1 = Action.ofNewAction(rule, "ALERT", "Message1", 1);
+        Action action2 = Action.ofNewAction(rule, "NOTIFICATION", "Message2", 2);
+        List<Action> mockActions = List.of(action1, action2);
+
+        when(actionRepository.findAll()).thenReturn(mockActions);
+
+        List<ActionResponse> result = actionService.getActions();
+
+        assertEquals(2, result.size());
+        assertEquals("Message1", result.get(0).getActParam());
+        assertEquals("Message2", result.get(1).getActParam());
+        verify(actionRepository).findAll();
     }
 
     @Test

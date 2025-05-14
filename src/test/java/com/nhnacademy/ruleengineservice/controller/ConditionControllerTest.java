@@ -1,5 +1,6 @@
 package com.nhnacademy.ruleengineservice.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
@@ -14,7 +15,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -53,7 +59,7 @@ class ConditionControllerTest {
                 1
         );
 
-        Mockito.when(conditionService.registerCondition(Mockito.any())).thenReturn(response);
+        when(conditionService.registerCondition(Mockito.any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/conditions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -74,11 +80,58 @@ class ConditionControllerTest {
                 1
         );
 
-        Mockito.when(conditionService.getCondition(1L)).thenReturn(response);
+        when(conditionService.getCondition(1L)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/conditions/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.conField").value("TEST Condition"));
+    }
+
+    @Test
+    @DisplayName("모든 조건 조회")
+    void getConditions_ReturnsAllConditions() throws Exception {
+        List<ConditionResponse> mockResponses = List.of(
+                new ConditionResponse(1L, 10L,"temperature", "GREATER_THAN", "25",1),
+                new ConditionResponse(2L, 20L, "humidity", "LESS_THAN", "70", 2)
+        );
+        when(conditionService.getConditions()).thenReturn(mockResponses);
+
+        MvcResult result = mockMvc.perform(get("/api/v1/conditions"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ConditionResponse> responses = objectMapper.readValue(
+                result.getResponse().getContentAsString(),
+                new TypeReference<List<ConditionResponse>>() {}
+        );
+
+        assertEquals(2, responses.size());
+        assertEquals("temperature", responses.get(0).getConType());
+        verify(conditionService, times(1)).getConditions();
+    }
+
+    @Test
+    @DisplayName("룰에 해당하는 모든 조건 조회")
+    void getConditionByRule_ValidRuleNo_ReturnsConditions() throws Exception {
+        Long ruleNo = 1L;
+        List<ConditionResponse> mockResponses = List.of(
+                new ConditionResponse(1L, 10L, "EQ", "pressure1", "1013", 1),
+                new ConditionResponse(1L, 10L, "EQ", "pressure2", "1014", 2)
+        );
+        when(conditionService.getConditionsByRule(ruleNo)).thenReturn(mockResponses);
+
+        MvcResult result = mockMvc.perform(get("/api/v1/conditions/rule/{ruleNo}", ruleNo))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ConditionResponse> responses = objectMapper.readValue(
+                result.getResponse().getContentAsString(),
+                new TypeReference<List<ConditionResponse>>() {}
+        );
+
+        assertEquals(2, responses.size());
+        assertEquals("EQ", responses.get(0).getConType());
+        verify(conditionService, times(1)).getConditionsByRule(ruleNo);
     }
 
     @Test

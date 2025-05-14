@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 액션(Action) 관련 HTTP 요청을 처리하는 컨트롤러입니다.
  * 액션 등록, 조회, 삭제 기능을 제공합니다.
@@ -52,6 +54,24 @@ public class ActionController {
         log.debug("get Action : {}", response);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ActionResponse>> getActions() {
+        List<ActionResponse> responses = actionService.getActions();
+
+        log.debug("get actions : {}", responses);
+
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/rule/{ruleNo}")
+    public ResponseEntity<List<ActionResponse>> getActionByRule(@PathVariable("ruleNo") Long ruleNo) {
+        List<ActionResponse> responses = actionService.getActionsByRule(ruleNo);
+
+        log.debug("get action by rule : {}", responses);
+
+        return ResponseEntity.ok(responses);
     }
 
     /**

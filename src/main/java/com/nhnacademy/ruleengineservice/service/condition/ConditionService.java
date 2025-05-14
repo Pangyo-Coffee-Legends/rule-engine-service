@@ -57,6 +57,12 @@ public interface ConditionService {
     List<ConditionResponse> getConditionsByRule(Long ruleNo);
 
     /**
+     * 모든 조건 조회
+     * @return 조건 응답 DTO 리스트
+     */
+    List<ConditionResponse> getConditions();
+
+    /**
      * 입력값에 대해 조건을 평가합니다.
      * @param conditionNo 조건 식별자
      * @param facts 평가에 사용할 데이터(파라미터)
