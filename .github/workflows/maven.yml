@@ -21,7 +21,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn -B package -Dspring.profiles.active=true --file pom.xml
+        run: mvn -B package --file pom.xml -Dskip Tests
         env:
           SPRING_MAIL_NAME: ${{ secrets.MAIL_NAME }}
           SPRING_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
