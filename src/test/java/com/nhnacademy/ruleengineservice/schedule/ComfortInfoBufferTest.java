@@ -3,11 +3,13 @@ package com.nhnacademy.ruleengineservice.schedule;
 import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ActiveProfiles("test")
 class ComfortInfoBufferTest {
 
     @Test

@@ -3,12 +3,14 @@ package com.nhnacademy.ruleengineservice.service.schedule;
 import com.nhnacademy.ruleengineservice.dto.engine.RuleEvaluationResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@ActiveProfiles("test")
 class ComfortResultServiceTest {
 
     @Test

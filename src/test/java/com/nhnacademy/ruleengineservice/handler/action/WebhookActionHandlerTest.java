@@ -4,12 +4,14 @@ import com.nhnacademy.ruleengineservice.domain.action.Action;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
+@ActiveProfiles("test")
 class WebhookActionHandlerTest {
 
     private final WebhookActionHandler handler = new WebhookActionHandler();
