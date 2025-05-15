@@ -42,6 +42,19 @@ public interface ActionService {
     void deleteAction(Long actionNo);
 
     /**
+     * 룰 번호와 액션에 해당하는 단건 삭제
+     * @param ruleNo 규칙 식별자
+     * @param actionNo 액션 식별자
+     */
+    void deleteActionByRuleNoAndActionNo(Long ruleNo, Long actionNo);
+
+    /**
+     * 룰 번호에 해당하는 모든 액션 삭제
+     * @param ruleNo 규칙 식별자
+     */
+    void deleteActionByRule(Long ruleNo);
+
+    /**
      * 액션 단건 조회
      * @param actionNo 액션 식별자
      * @return 액션 상세 DTO

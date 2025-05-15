@@ -103,4 +103,25 @@ public class ConditionController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/rule/{ruleNo}")
+    public ResponseEntity<Void> deleteConditionByRule(@PathVariable("ruleNo") Long ruleNo) {
+        conditionService.deleteConditionByRule(ruleNo);
+
+        log.debug("Deleted all conditions in rule : {}", ruleNo);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/rule/{ruleNo}/condition/{conditionNo}")
+    public ResponseEntity<Void> deleteConditionByRuleNoAndConditionNo(
+            @PathVariable("ruleNo") Long ruleNo,
+            @PathVariable("conditionNo") Long conditionNo
+    ) {
+        conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo);
+
+        log.debug("Deleted condition {} in rule {}", conditionNo, ruleNo);
+
+        return ResponseEntity.noContent().build();
+    }
 }

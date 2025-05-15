@@ -117,6 +117,130 @@ class ConditionServiceImplTest {
     }
 
     @Test
+    @DisplayName("deleteConditionByRuleNoAndConditionNo - Rule이 존재하지 않을 경우 예외 발생")
+    void deleteCondition_RuleNotFound_ThrowsRuleNotFoundException() {
+        Long ruleNo = 1L;
+        Long conditionNo = 100L;
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(null);
+
+        assertThrows(RuleNotFoundException.class, () ->
+                conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo)
+        );
+        verify(ruleService).getRuleEntity(ruleNo);
+        verifyNoInteractions(conditionRepository);
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRuleNoAndConditionNo - Condition이 존재하지 않을 경우 예외 발생")
+    void deleteCondition_ConditionNotFound_ThrowsConditionNotFoundException() {
+        Long ruleNo = 2L;
+        Long conditionNo = 200L;
+        Rule mockRule = mock(Rule.class);
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.empty());
+
+        assertThrows(ConditionNotFoundException.class, () ->
+                conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo)
+        );
+        verify(conditionRepository).findById(conditionNo);
+        verify(conditionRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRuleNoAndConditionNo - Condition이 다른 Rule에 속할 경우 예외 발생")
+    void deleteCondition_ConditionBelongsToOtherRule_ThrowsIllegalArgumentException() {
+        Long ruleNo = 3L;
+        Long otherRuleNo = 999L;
+        Long conditionNo = 300L;
+
+        Rule mockRule = mock(Rule.class);
+        Rule otherRule = mock(Rule.class);
+        Condition mockCondition = mock(Condition.class);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.of(mockCondition));
+        when(mockCondition.getRule()).thenReturn(otherRule);
+        when(otherRule.getRuleNo()).thenReturn(otherRuleNo);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo)
+        );
+        assertEquals("Condition does not belong to the specified rule.", exception.getMessage());
+        verify(conditionRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRuleNoAndConditionNo - 정상 삭제 시 Condition 삭제 및 로깅")
+    void deleteCondition_ValidRequest_DeletesCondition() {
+        Long ruleNo = 4L;
+        Long conditionNo = 400L;
+
+        Rule mockRule = mock(Rule.class);
+        Condition mockCondition = mock(Condition.class);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.of(mockCondition));
+        when(mockCondition.getRule()).thenReturn(mockRule);
+        when(mockRule.getRuleNo()).thenReturn(ruleNo);
+
+        conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo);
+
+        verify(conditionRepository).delete(mockCondition);
+        verify(mockCondition).getRule();
+        verify(mockRule).getRuleNo();
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRule - Rule이 존재 하지 않을 경우 RuleNotFoundException 발생")
+    void deleteConditionByRule_whenRuleNotFound_thenThrowException() {
+        Long ruleNo = 1L;
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(null);
+
+        assertThrows(RuleNotFoundException.class, () -> conditionService.deleteConditionByRule(ruleNo));
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verifyNoInteractions(conditionRepository);
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRule - Condition이 존재하지 않을 경우 ConditionNotFoundException 발생")
+    void deleteConditionByRule_ActionsNotFound_ThrowsException() {
+        Long ruleNo = 2L;
+        Rule mockRule = mock(Rule.class);
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findByRule(mockRule)).thenReturn(Collections.emptyList());
+
+        ConditionNotFoundException exception = assertThrows(
+                ConditionNotFoundException.class,
+                () -> conditionService.deleteConditionByRule(ruleNo)
+        );
+
+        assertEquals("Condition Not Found : condition is null", exception.getMessage());
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(conditionRepository).findByRule(mockRule);
+        verify(conditionRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRule - Condition이 존재할 경우 정상 삭제 및 로깅")
+    void deleteConditionByRule_ActionsExist_DeletesAndLogs() {
+        Long ruleNo = 3L;
+        Rule mockRule = mock(Rule.class);
+        Condition condition1 = mock();
+        Condition condition2 = mock();
+        List<Condition> conditions = List.of(condition1, condition2);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findByRule(mockRule)).thenReturn(conditions);
+
+        conditionService.deleteConditionByRule(ruleNo);
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(conditionRepository).findByRule(mockRule);
+        verify(conditionRepository).deleteAll(conditions);
+    }
+
+    @Test
     @DisplayName("조건 단건 조회 성공")
     void getCondition() {
         Long conditionNo = 1L;

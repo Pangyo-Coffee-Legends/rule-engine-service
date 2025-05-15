@@ -99,4 +99,25 @@ public class ActionController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/rule/{ruleNo}")
+    public ResponseEntity<Void> deleteActionByRule(@PathVariable("ruleNo") Long ruleNo) {
+        actionService.deleteActionByRule(ruleNo);
+
+        log.debug("Deleted all actions in rule : {}", ruleNo);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/rule/{ruleNo}/action/{actionNo}")
+    public ResponseEntity<Void> deleteActionsByRuleNoAndActionNo (
+            @PathVariable("ruleNo") Long ruleNo,
+            @PathVariable("actionNo") Long actionNo
+    ){
+        actionService.deleteActionByRuleNoAndActionNo(ruleNo, actionNo);
+
+        log.debug("Deleted action {} in rule {}", actionNo, ruleNo);
+
+        return ResponseEntity.noContent().build();
+    }
 }

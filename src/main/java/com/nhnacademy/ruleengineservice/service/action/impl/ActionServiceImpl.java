@@ -6,6 +6,7 @@ import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
 import com.nhnacademy.ruleengineservice.exception.action.ActionNotFoundException;
+import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.handler.ActionHandler;
 import com.nhnacademy.ruleengineservice.registry.ActionHandlerRegistry;
 import com.nhnacademy.ruleengineservice.repository.action.ActionRepository;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -62,6 +64,42 @@ public class ActionServiceImpl implements ActionService {
 
         actionRepository.deleteById(actionNo);
         log.debug("deleteAction success");
+    }
+
+    @Override
+    public void deleteActionByRuleNoAndActionNo(Long ruleNo, Long actionNo) {
+        Rule rule = ruleService.getRuleEntity(ruleNo);
+        if (Objects.isNull(rule)) {
+            throw new RuleNotFoundException(ruleNo);
+        }
+
+        Action action = actionRepository.findById(actionNo)
+                .orElseThrow(() -> new ActionNotFoundException(actionNo));
+
+        if (!action.getRule().getRuleNo().equals(ruleNo)) {
+            throw new IllegalArgumentException("Action does not belong to the specified rule");
+        }
+
+        actionRepository.delete(action);
+        log.debug("Action {} associated with ruleNo = {} has been deleted.", actionNo, ruleNo);
+    }
+
+    @Override
+    public void deleteActionByRule(Long ruleNo) {
+        Rule rule = ruleService.getRuleEntity(ruleNo);
+
+        if (Objects.isNull(rule)) {
+            throw new RuleNotFoundException(ruleNo);
+        }
+
+        List<Action> actions = actionRepository.findByRule(rule);
+
+        if (actions.isEmpty()) {
+            throw new ActionNotFoundException("action is null");
+        }
+
+        actionRepository.deleteAll(actions);
+        log.debug("{} actions associated with ruleNo = {} have been deleted.", ruleNo, actions.size());
     }
 
     @Override

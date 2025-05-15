@@ -43,6 +43,19 @@ public interface ConditionService {
     void deleteCondition(Long conditionNo);
 
     /**
+     * 규칙 번호와 컨디션 번호에 해당하는 단건 삭제
+     * @param ruleNo 규칙 식별자
+     * @param conditionNo 조건 식별자
+     */
+    void deleteConditionByRuleNoAndConditionNo(Long ruleNo, Long conditionNo);
+
+    /**
+     * 룰 번호에 대한 조건을 모두 삭제 합니다.
+     * @param ruleNo 룰 식별자
+     */
+    void deleteConditionByRule(Long ruleNo);
+
+    /**
      * 조건 단건 조회
      * @param conditionNo 조건 식별자
      * @return Condition 상세 DTO

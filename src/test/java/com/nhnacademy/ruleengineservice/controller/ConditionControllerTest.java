@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
+import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -102,7 +104,7 @@ class ConditionControllerTest {
 
         List<ConditionResponse> responses = objectMapper.readValue(
                 result.getResponse().getContentAsString(),
-                new TypeReference<List<ConditionResponse>>() {}
+                new TypeReference<>() {}
         );
 
         assertEquals(2, responses.size());
@@ -126,7 +128,7 @@ class ConditionControllerTest {
 
         List<ConditionResponse> responses = objectMapper.readValue(
                 result.getResponse().getContentAsString(),
-                new TypeReference<List<ConditionResponse>>() {}
+                new TypeReference<>() {}
         );
 
         assertEquals(2, responses.size());
@@ -141,5 +143,42 @@ class ConditionControllerTest {
 
         mockMvc.perform(delete("/api/v1/conditions/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("DELETE /rule/{ruleNo} - 룰의 모든 조건 삭제 성공")
+    void deleteConditionByRule_Success() throws Exception {
+        Long ruleNo = 1L;
+        doNothing().when(conditionService).deleteConditionByRule(ruleNo);
+
+        mockMvc.perform(delete("/api/v1/conditions/rule/{ruleNo}", ruleNo))
+                .andExpect(status().isNoContent());
+
+        verify(conditionService, times(1)).deleteConditionByRule(ruleNo);
+    }
+
+    @Test
+    @DisplayName("DELETE /rule/{ruleNo}/condition/{conditionNo} - 단일 조건 삭제 성공")
+    void deleteConditionByRuleNoAndConditionNo_Success() throws Exception {
+        Long ruleNo = 2L;
+        Long conditionNo = 22L;
+        doNothing().when(conditionService).deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo);
+
+        mockMvc.perform(delete("/api/v1/conditions/rule/{ruleNo}/condition/{conditionNo}", ruleNo, conditionNo))
+                .andExpect(status().isNoContent());
+
+        verify(conditionService, times(1)).deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo);
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/conditions/rule/{ruleNo} - 존재하지 않는 룰 삭제 시 예외 발생")
+    void deleteConditionByRule_RuleNotFound() throws Exception {
+        Long invalidRuleNo = 1246L;
+        doThrow(new RuleNotFoundException(invalidRuleNo))
+                .when(conditionService).deleteConditionByRule(invalidRuleNo);
+
+        mockMvc.perform(delete("/api/v1/conditions/rule/{ruleNo}", invalidRuleNo))
+                .andExpect(status().isNotFound())
+                .andExpect(result -> assertInstanceOf(RuleNotFoundException.class, result.getResolvedException()));
     }
 }

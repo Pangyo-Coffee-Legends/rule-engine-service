@@ -6,6 +6,7 @@ import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResult;
 import com.nhnacademy.ruleengineservice.exception.condition.ConditionNotFoundException;
+import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.repository.condition.ConditionRepository;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -58,6 +60,42 @@ public class ConditionServiceImpl implements ConditionService {
 
         conditionRepository.deleteById(conditionNo);
         log.debug("deleteCondition success");
+    }
+
+    @Override
+    public void deleteConditionByRuleNoAndConditionNo(Long ruleNo, Long conditionNo) {
+        Rule rule = ruleService.getRuleEntity(ruleNo);
+        if (Objects.isNull(rule)) {
+            throw new RuleNotFoundException(ruleNo);
+        }
+
+        Condition condition = conditionRepository.findById(conditionNo)
+                .orElseThrow(() -> new ConditionNotFoundException(conditionNo));
+
+        if (!condition.getRule().getRuleNo().equals(ruleNo)) {
+            throw new IllegalArgumentException("Condition does not belong to the specified rule.");
+        }
+
+        conditionRepository.delete(condition);
+        log.debug("Condition {} associated with ruleNo = {} has been deleted.", conditionNo, ruleNo);
+    }
+
+    @Override
+    public void deleteConditionByRule(Long ruleNo) {
+        Rule rule = ruleService.getRuleEntity(ruleNo);
+
+        if (Objects.isNull(rule)) {
+            throw new RuleNotFoundException(ruleNo);
+        }
+
+        List<Condition> conditionList = conditionRepository.findByRule(rule);
+
+        if (conditionList.isEmpty()) {
+            throw new ConditionNotFoundException("condition is null");
+        }
+
+        conditionRepository.deleteAll(conditionList);
+        log.debug("{} conditions associated with ruleNo = {} have been deleted.", ruleNo, conditionList.size());
     }
 
     @Override

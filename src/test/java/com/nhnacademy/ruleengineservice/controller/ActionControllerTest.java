@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.action.ActionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
+import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +20,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -100,7 +101,7 @@ class ActionControllerTest {
 
         List<ActionResponse> responses = objectMapper.readValue(
                 result.getResponse().getContentAsString(),
-                new TypeReference<List<ActionResponse>>() {}
+                new TypeReference<>() {}
         );
 
         assertEquals(2, responses.size());
@@ -123,7 +124,7 @@ class ActionControllerTest {
 
         List<ActionResponse> responses = objectMapper.readValue(
                 result.getResponse().getContentAsString(),
-                new TypeReference<List<ActionResponse>>() {}
+                new TypeReference<>() {}
         );
 
         assertEquals(2, responses.size());
@@ -138,5 +139,42 @@ class ActionControllerTest {
 
         mockMvc.perform(delete("/api/v1/actions/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/actions/rule/{ruleNo} - 룰의 모든 액션 삭제 성공")
+    void deleteActionByRule_Success() throws Exception {
+        Long ruleNo = 1L;
+        doNothing().when(actionService).deleteActionByRule(ruleNo);
+
+        mockMvc.perform(delete("/api/v1/actions/rule/{ruleNo}", ruleNo))
+                .andExpect(status().isNoContent());
+
+        verify(actionService, times(1)).deleteActionByRule(ruleNo);
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/actions/rule/{ruleNo}/action/{actionNo} - 액션 단건 삭제 성공")
+    void deleteActionByRuleNoAndActionNo_Success() throws Exception {
+        Long ruleNo = 2L;
+        Long actionNo = 20L;
+        doNothing().when(actionService).deleteActionByRuleNoAndActionNo(ruleNo, actionNo);
+
+        mockMvc.perform(delete("/api/v1/actions/rule/{ruleNo}/action/{actionNo}", ruleNo, actionNo))
+                .andExpect(status().isNoContent());
+
+        verify(actionService, times(1)).deleteActionByRuleNoAndActionNo(ruleNo, actionNo);
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/actions/rule/{ruleNo} - 존재하지 않는 룰 삭제 시 예외 발생")
+    void deleteActionByRule_RuleNotFound() throws Exception {
+        Long invalidRuleNo = 999L;
+        doThrow(new RuleNotFoundException(invalidRuleNo))
+                .when(actionService).deleteActionByRule(invalidRuleNo);
+
+        mockMvc.perform(delete("/api/v1/actions/rule/{ruleNo}", invalidRuleNo))
+                .andExpect(status().isNotFound())
+                .andExpect(result -> assertInstanceOf(RuleNotFoundException.class, result.getResolvedException()));
     }
 }
