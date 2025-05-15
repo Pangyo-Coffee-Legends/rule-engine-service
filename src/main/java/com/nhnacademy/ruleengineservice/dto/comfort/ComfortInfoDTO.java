@@ -1,24 +1,21 @@
 package com.nhnacademy.ruleengineservice.dto.comfort;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Value;
-
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 쾌적도 정보를 담아서 보내는 DTO 클래스
  */
-@Value
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ComfortInfoDTO {
     /**
      * 장소
      */
     String location;
-
-    /**
-     * 현재 시간
-     */
-    LocalDateTime currentTime;
 
     /**
      * 온도

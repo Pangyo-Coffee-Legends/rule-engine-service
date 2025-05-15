@@ -4,7 +4,6 @@ import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,7 +16,6 @@ class ComfortInfoBufferTest {
         ComfortInfoBuffer buffer = new ComfortInfoBuffer();
         ComfortInfoDTO dto1 = new ComfortInfoDTO(
                 "A",
-                LocalDateTime.now(),
                 25.0,
                 50.0,
                 400.0,
@@ -27,7 +25,6 @@ class ComfortInfoBufferTest {
 
         ComfortInfoDTO dto2 = new ComfortInfoDTO(
                 "B",
-                LocalDateTime.now(),
                 30.0,
                 60.0, 600.0,
                 "더움",

@@ -5,11 +5,11 @@ VALUES
 
 INSERT INTO RULES (rule_group_no, rule_name, rule_description, rule_priority, active, created_at, updated_at)
 VALUES
-    (1, '고온 경고', '온도가 30도 이상일 때 경고', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (1, '저온 경고', '온도가 20도 이하일 때 경고', 2, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (1, '고습 경고', '습도가 70% 이상일 때 경고', 3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (1, 'CO2 경고', 'CO2가 1000ppm 이상일 때 경고', 4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (2, 'CO2 경고', 'CO2가 1000ppm 이상일 때 경고', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    (1, '고온 경고', '온도가 30도 이상일 때 경고', 1, true, NOW(), NOW()),
+    (1, '저온 경고', '온도가 20도 이하일 때 경고', 2, true, NOW(), NOW()),
+    (1, '고습 경고', '습도가 70% 이상일 때 경고', 3, true, NOW(), NOW()),
+    (1, 'CO2 경고', 'CO2가 1000ppm 이상일 때 경고', 4, true, NOW(), NOW()),
+    (2, 'CO2 경고', 'CO2가 1000ppm 이상일 때 경고', 1, true, NOW(), NOW());
 
 INSERT INTO CONDITIONS (rule_no, con_type, con_field, con_value, con_priority, created_at)
 VALUES
@@ -35,8 +35,8 @@ VALUES
 
 INSERT INTO RULE_MEMBER_MAPPINGS (rule_no, mb_no)
 VALUES
-    (1, 101),
-    (2, 102);
+    (1, 96),
+    (2, 98);
 
 INSERT INTO TRIGGER_EVENTS (rule_no, event_type, event_params, created_at)
 VALUES

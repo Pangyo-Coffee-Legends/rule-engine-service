@@ -15,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -48,7 +47,6 @@ class ComfortControllerTest {
     void setUp() {
         testComfortInfo = new ComfortInfoDTO(
                 "A",
-                LocalDateTime.now(),
                 30.0,
                 40.0,
                 500.0,

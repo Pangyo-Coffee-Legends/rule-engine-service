@@ -1,5 +1,6 @@
 package com.nhnacademy.ruleengineservice.dto.action;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class ActionResult {
     /**
      * 액션의 식별자
      */
+    @JsonProperty("act_no")
     Long actNo;
 
     /**
@@ -28,6 +30,7 @@ public class ActionResult {
     /**
      * 액션의 유형 (예: EMAIL, PUSH 등)
      */
+    @JsonProperty("act_type")
     String actType;
 
     /**
@@ -43,6 +46,7 @@ public class ActionResult {
     /**
      * 액션 실행 시각
      */
+    @JsonProperty("executed_at")
     LocalDateTime executedAt;
 
 }

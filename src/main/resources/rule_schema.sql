@@ -26,7 +26,7 @@ CREATE TABLE conditions (
 
 DROP TABLE IF EXISTS rule_member_mappings;
 CREATE TABLE rule_member_mappings (
-                                      rule_member_mapping_no BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                      rule_mb_mapping_no BIGINT PRIMARY KEY AUTO_INCREMENT,
                                       rule_no BIGINT NOT NULL,
                                       mb_no BIGINT NOT NULL
 );

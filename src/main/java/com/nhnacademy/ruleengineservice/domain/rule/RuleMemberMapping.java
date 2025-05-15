@@ -17,7 +17,7 @@ public class RuleMemberMapping {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "mapping_no")
+    @Column(name = "rule_mb_mapping_no")
     private Long mappingNo;
 
     /**
