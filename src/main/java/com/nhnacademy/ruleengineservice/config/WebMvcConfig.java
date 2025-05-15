@@ -1,7 +1,9 @@
 package com.nhnacademy.ruleengineservice.config;
 
+import com.nhnacademy.ruleengineservice.interceptor.AuthInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -21,12 +23,32 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
+    private final AuthInterceptor authInterceptor;
+
+    public WebMvcConfig(AuthInterceptor authInterceptor) {
+        this.authInterceptor = authInterceptor;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(authInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/api/v1/comfort/**",
+                        "/api/v1/rule-groups/**",
+                        "/api/v1/rule-engine/**",
+                        "/api/v1/conditions/**",
+                        "/api/v1/actions/**"
+                );
+    }
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("*") // 우리 도메인 설정
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 기타 들어갈 method
+                //.allowedOriginPatterns("https://aiot2.live", "http://localhost:3000")
+                .allowedOriginPatterns("*") // 우리 도메인 설정
+                .allowedMethods("GET", "POST", "PUT", "DELETE") // 기타 들어갈 method
                 .allowedHeaders("*")
-                .allowCredentials(false);
+                .allowCredentials(true); // front 가 인증 헤더 보낸다면 true
     }
 }

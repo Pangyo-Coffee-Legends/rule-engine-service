@@ -1,6 +1,9 @@
 package com.nhnacademy.ruleengineservice.dto.action;
 
-import lombok.Value;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -8,12 +11,15 @@ import java.time.LocalDateTime;
  * 액션 실행 결과를 담는 DTO 클래스입니다.
  * 한 액션의 실행 성공/실패, 메시지, 출력값, 예외 정보를 포함합니다.
  */
-@Value
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ActionResult {
 
     /**
      * 액션의 식별자
      */
+    @JsonProperty("act_no")
     Long actNo;
 
     /**
@@ -24,6 +30,7 @@ public class ActionResult {
     /**
      * 액션의 유형 (예: EMAIL, PUSH 등)
      */
+    @JsonProperty("act_type")
     String actType;
 
     /**
@@ -39,6 +46,7 @@ public class ActionResult {
     /**
      * 액션 실행 시각
      */
+    @JsonProperty("executed_at")
     LocalDateTime executedAt;
 
 }

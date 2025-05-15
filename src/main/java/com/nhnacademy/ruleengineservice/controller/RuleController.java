@@ -4,7 +4,9 @@ import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleUpdateRequest;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,13 +36,16 @@ public class RuleController {
      * @return 등록된 규칙 정보
      */
     @PostMapping
-    public ResponseEntity<RuleResponse> registerRule(@RequestBody RuleRegisterRequest request) {
+    public ResponseEntity<RuleResponse> registerRule(
+            @Valid @RequestBody RuleRegisterRequest request
+    ) {
         RuleResponse response = ruleService.registerRule(request);
 
         log.debug("registerRule : {}", response);
 
         return ResponseEntity
-                .ok(response);
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     /**
@@ -56,6 +61,16 @@ public class RuleController {
         log.debug("getRule : {}", response);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/group/{no}")
+    public ResponseEntity<List<RuleResponse>> getRulesByRuleGroup(@PathVariable Long no) {
+        List<RuleResponse> responseList = ruleService.getRulesByGroup(no);
+
+        log.debug("getRulesByRuleGroup : {}", responseList);
+
+        return ResponseEntity
+                .ok(responseList);
     }
 
     /**
@@ -81,12 +96,14 @@ public class RuleController {
      */
     @PutMapping("/{ruleNo}")
     public ResponseEntity<RuleResponse> updateRule(@PathVariable Long ruleNo,
-                                                   @RequestBody RuleUpdateRequest request) {
+                                                   @Valid @RequestBody RuleUpdateRequest request) {
         RuleResponse response = ruleService.updateRule(ruleNo, request);
 
         log.debug("updateRule : {}", response);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .body(response);
     }
 
     /**

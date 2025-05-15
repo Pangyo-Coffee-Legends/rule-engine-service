@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.service.condition.impl;
 
 import com.nhnacademy.ruleengineservice.domain.condition.Condition;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
+import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResult;
@@ -24,8 +25,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @Slf4j
 @DataJpaTest
@@ -45,7 +45,7 @@ class ConditionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        rule = Mockito.mock();
+        rule = mock();
     }
 
     @Test
@@ -117,6 +117,130 @@ class ConditionServiceImplTest {
     }
 
     @Test
+    @DisplayName("deleteConditionByRuleNoAndConditionNo - Rule이 존재하지 않을 경우 예외 발생")
+    void deleteCondition_RuleNotFound_ThrowsRuleNotFoundException() {
+        Long ruleNo = 1L;
+        Long conditionNo = 100L;
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(null);
+
+        assertThrows(RuleNotFoundException.class, () ->
+                conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo)
+        );
+        verify(ruleService).getRuleEntity(ruleNo);
+        verifyNoInteractions(conditionRepository);
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRuleNoAndConditionNo - Condition이 존재하지 않을 경우 예외 발생")
+    void deleteCondition_ConditionNotFound_ThrowsConditionNotFoundException() {
+        Long ruleNo = 2L;
+        Long conditionNo = 200L;
+        Rule mockRule = mock(Rule.class);
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.empty());
+
+        assertThrows(ConditionNotFoundException.class, () ->
+                conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo)
+        );
+        verify(conditionRepository).findById(conditionNo);
+        verify(conditionRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRuleNoAndConditionNo - Condition이 다른 Rule에 속할 경우 예외 발생")
+    void deleteCondition_ConditionBelongsToOtherRule_ThrowsIllegalArgumentException() {
+        Long ruleNo = 3L;
+        Long otherRuleNo = 999L;
+        Long conditionNo = 300L;
+
+        Rule mockRule = mock(Rule.class);
+        Rule otherRule = mock(Rule.class);
+        Condition mockCondition = mock(Condition.class);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.of(mockCondition));
+        when(mockCondition.getRule()).thenReturn(otherRule);
+        when(otherRule.getRuleNo()).thenReturn(otherRuleNo);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo)
+        );
+        assertEquals("Condition does not belong to the specified rule.", exception.getMessage());
+        verify(conditionRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRuleNoAndConditionNo - 정상 삭제 시 Condition 삭제 및 로깅")
+    void deleteCondition_ValidRequest_DeletesCondition() {
+        Long ruleNo = 4L;
+        Long conditionNo = 400L;
+
+        Rule mockRule = mock(Rule.class);
+        Condition mockCondition = mock(Condition.class);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findById(conditionNo)).thenReturn(Optional.of(mockCondition));
+        when(mockCondition.getRule()).thenReturn(mockRule);
+        when(mockRule.getRuleNo()).thenReturn(ruleNo);
+
+        conditionService.deleteConditionByRuleNoAndConditionNo(ruleNo, conditionNo);
+
+        verify(conditionRepository).delete(mockCondition);
+        verify(mockCondition).getRule();
+        verify(mockRule).getRuleNo();
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRule - Rule이 존재 하지 않을 경우 RuleNotFoundException 발생")
+    void deleteConditionByRule_whenRuleNotFound_thenThrowException() {
+        Long ruleNo = 1L;
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(null);
+
+        assertThrows(RuleNotFoundException.class, () -> conditionService.deleteConditionByRule(ruleNo));
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verifyNoInteractions(conditionRepository);
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRule - Condition이 존재하지 않을 경우 ConditionNotFoundException 발생")
+    void deleteConditionByRule_ActionsNotFound_ThrowsException() {
+        Long ruleNo = 2L;
+        Rule mockRule = mock(Rule.class);
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findByRule(mockRule)).thenReturn(Collections.emptyList());
+
+        ConditionNotFoundException exception = assertThrows(
+                ConditionNotFoundException.class,
+                () -> conditionService.deleteConditionByRule(ruleNo)
+        );
+
+        assertEquals("Condition Not Found : condition is null", exception.getMessage());
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(conditionRepository).findByRule(mockRule);
+        verify(conditionRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    @DisplayName("deleteConditionByRule - Condition이 존재할 경우 정상 삭제 및 로깅")
+    void deleteConditionByRule_ActionsExist_DeletesAndLogs() {
+        Long ruleNo = 3L;
+        Rule mockRule = mock(Rule.class);
+        Condition condition1 = mock();
+        Condition condition2 = mock();
+        List<Condition> conditions = List.of(condition1, condition2);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findByRule(mockRule)).thenReturn(conditions);
+
+        conditionService.deleteConditionByRule(ruleNo);
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(conditionRepository).findByRule(mockRule);
+        verify(conditionRepository).deleteAll(conditions);
+    }
+
+    @Test
     @DisplayName("조건 단건 조회 성공")
     void getCondition() {
         Long conditionNo = 1L;
@@ -144,7 +268,45 @@ class ConditionServiceImplTest {
                 () -> assertEquals(1, response.getConPriority())
         );
     }
-    // 실패 추가
+
+    @Test
+    void getConditionsByRule_ValidRuleNo_ReturnsConditionResponses() {
+        Long ruleNo = 1L;
+        RuleGroup ruleGroup = mock();
+        Rule mockRule = Rule.ofNewRule(ruleGroup, "Test Rule", "Description", 1);
+        setField(mockRule, "ruleNo", ruleNo);
+        Condition condition1 = Condition.ofNewCondition(mockRule, "type1", "field1", "value1", 1);
+        Condition condition2 = Condition.ofNewCondition(mockRule, "type2", "field2", "value2", 2);
+        List<Condition> mockConditions = List.of(condition1, condition2);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(conditionRepository.findByRule(mockRule)).thenReturn(mockConditions);
+
+        List<ConditionResponse> result = conditionService.getConditionsByRule(ruleNo);
+
+        assertEquals(2, result.size());
+        assertEquals("field1", result.get(0).getConField());
+        assertEquals("type2", result.get(1).getConType());
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(conditionRepository).findByRule(mockRule);
+    }
+
+    @Test
+    void getConditions_ReturnsAllConditionResponses() {
+        Condition condition1 = Condition.ofNewCondition(rule, "type1", "field1", "value1", 1);
+        Condition condition2 = Condition.ofNewCondition(rule, "type2", "field2", "value2", 2);
+        List<Condition> mockConditions = List.of(condition1, condition2);
+
+        when(conditionRepository.findAll()).thenReturn(mockConditions);
+
+        List<ConditionResponse> result = conditionService.getConditions();
+
+        assertEquals(2, result.size());
+        assertEquals("field2", result.get(1).getConField());
+        verify(conditionRepository).findAll();
+    }
+
     @Test
     @DisplayName("조건 단건 조회 실패")
     void getCondition_exception() {
@@ -152,33 +314,6 @@ class ConditionServiceImplTest {
         when(conditionRepository.findById(nonExistentConditionNo)).thenReturn(Optional.empty());
 
         assertThrows(ConditionNotFoundException.class, () -> conditionService.getCondition(nonExistentConditionNo));
-    }
-
-    @Test
-    @DisplayName("규칙별 조건 목록 조회 성공")
-    void getConditionsByRule() {
-        List<Condition> mockConditions = new ArrayList<>();
-
-        Condition condition1 = Condition.ofNewCondition(rule, "EQ", "field1", "21", 1);
-        Condition condition2 = Condition.ofNewCondition(rule, "GT", "field2", "30", 1);
-
-        mockConditions.add(condition1);
-        mockConditions.add(condition2);
-
-        when(conditionRepository.findAll()).thenReturn(mockConditions);
-
-        List<ConditionResponse> responses = conditionService.getConditionsByRule(1L);
-
-        assertNotNull(responses);
-        assertEquals(2, responses.size());
-    }
-
-    @Test
-    @DisplayName("조건 리스트 조회 실패")
-    void getConditionsByRule_exception() {
-        when(conditionRepository.findAll()).thenReturn(Collections.emptyList());
-
-        assertThrows(ConditionNotFoundException.class, () -> conditionService.getConditionsByRule(1L));
     }
 
     @Test
@@ -414,13 +549,15 @@ class ConditionServiceImplTest {
     void getRequiredFieldsByRule_duplicateFields() {
         Condition condition1 = Condition.ofNewCondition(rule, "EQ", "temperature", "25", 1);
         Condition condition2 = Condition.ofNewCondition(rule, "GT", "temperature", "30", 1);
+        Condition condition3 = Condition.ofNewCondition(rule, "GT", "humidity", "30", 1);
 
-        when(conditionRepository.findByRule(rule)).thenReturn(List.of(condition1, condition2));
+        when(rule.getConditionList()).thenReturn(Arrays.asList(condition1, condition2, condition3));
 
         List<String> fields = conditionService.getRequiredFieldsByRule(rule);
 
-        assertEquals(1, fields.size());
+        assertEquals(2, fields.size());
         assertEquals("temperature", fields.get(0));
+        assertEquals("humidity", fields.get(1));
     }
 
     @Test
@@ -475,7 +612,7 @@ class ConditionServiceImplTest {
     @Test
     @DisplayName("규칙에 연결된 조건들을 평가하고 결과 리스트 반환")
     void evaluateConditionsForRule_ReturnsListOfConditionResults() {
-        Rule mockRule = Mockito.mock();
+        Rule mockRule = mock();
         setField(mockRule, "ruleNo", 1L);
 
         Condition condition1 = Condition.ofNewCondition(mockRule, "LT", "temperature", "30", 1);
@@ -553,7 +690,6 @@ class ConditionServiceImplTest {
                 () -> assertFalse(results.get(1).isMatched())
         );
     }
-
 
     private void setField(Object target, String fieldName, Object value) {
         try {

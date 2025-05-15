@@ -1,12 +1,12 @@
 package com.nhnacademy.ruleengineservice;
 
-import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.QueryApi;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
@@ -20,14 +20,8 @@ import static org.mockito.Mockito.when;
                 "eureka.client.enabled=false",
                 "spring.cloud.discovery.enabled=false"
         })
+@ActiveProfiles("test")
 class RuleEngineServiceApplicationTests {
-
-    /**
-     * InfluxDBClient 를 Spring ApplicationContext 에 Mockito Mock 객체로 주입합니다.
-     * 즉, QueryAPi 대신 Mock 객체가 주입됩니다.
-     */
-    @MockitoBean
-    private InfluxDBClient influxDBClient;
 
     /**
      * QueryApi 를 Spring ApplicationContext 에 Mockito Mock 객체로 주입합니다.
@@ -46,7 +40,6 @@ class RuleEngineServiceApplicationTests {
     @Test
     void contextLoads() {
         Assertions.assertNotNull(context);
-        when(influxDBClient.getQueryApi()).thenReturn(queryApi);
         when(queryApi.query(anyString())).thenReturn(List.of());
     }
 }

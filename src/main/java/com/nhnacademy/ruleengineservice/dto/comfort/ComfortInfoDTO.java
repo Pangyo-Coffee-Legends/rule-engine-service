@@ -1,23 +1,21 @@
 package com.nhnacademy.ruleengineservice.dto.comfort;
 
-import lombok.Value;
-
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 쾌적도 정보를 담아서 보내는 DTO 클래스
  */
-@Value
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ComfortInfoDTO {
     /**
      * 장소
      */
     String location;
-
-    /**
-     * 현재 시간
-     */
-    LocalDateTime currentTime;
 
     /**
      * 온도
@@ -35,17 +33,14 @@ public class ComfortInfoDTO {
     Double co2;
 
     /**
-     * ai 온도 설명
+     * ai 온도, 습도 설명
      */
-    String temperatureComment;
-
-    /**
-     * ai 습도 설명
-     */
-    String humidityComment;
+    @JsonProperty("comport-index")
+    String comportIndex;
 
     /**
      * ai co2 설명
      */
+    @JsonProperty("co2-comment")
     String co2Comment;
 }

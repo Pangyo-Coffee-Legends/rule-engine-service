@@ -15,14 +15,15 @@ import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleUpdateRequest;
 import com.nhnacademy.ruleengineservice.exception.member.MemberNotFoundException;
-import com.nhnacademy.ruleengineservice.exception.member.UnauthorizedException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RulePersistException;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleGroupRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleMemberMappingRepository;
 import com.nhnacademy.ruleengineservice.repository.rule.RuleRepository;
+import com.nhnacademy.ruleengineservice.repository.trigger.TriggerRepository;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +31,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class RuleServiceImpl implements RuleService {
 
     private final RuleGroupRepository ruleGroupRepository;
@@ -45,26 +46,11 @@ public class RuleServiceImpl implements RuleService {
 
     private final MemberAdaptor memberAdaptor;
 
-    public RuleServiceImpl(
-            RuleGroupRepository ruleGroupRepository,
-            RuleRepository ruleRepository,
-            RuleMemberMappingRepository ruleMemberMappingRepository,
-            MemberAdaptor memberAdaptor
-    ) {
-        this.ruleGroupRepository = ruleGroupRepository;
-        this.ruleRepository = ruleRepository;
-        this.ruleMemberMappingRepository = ruleMemberMappingRepository;
-        this.memberAdaptor = memberAdaptor;
-    }
+    private final TriggerRepository triggerRepository;
 
     @Override
     public RuleResponse registerRule(RuleRegisterRequest request) {
         String email = MemberThreadLocal.getMemberEmail();
-
-        if (Objects.isNull(email) || email.isBlank()) {
-            log.error("registerRule unauthorized");
-            throw new UnauthorizedException("로그인이 필요합니다.");
-        }
 
         RuleGroup ruleGroup = ruleGroupRepository.findById(request.getRuleGroupNo())
                 .orElseThrow(() -> new RuleGroupNotFoundException(request.getRuleGroupNo()));
@@ -76,13 +62,20 @@ public class RuleServiceImpl implements RuleService {
             throw new MemberNotFoundException(email);
         }
 
-        Rule rule = Rule.ofNewRule(
-                ruleGroup,
-                request.getRuleName(),
-                request.getRuleDescription(),
-                request.getRulePriority()
+        Rule rule = ruleRepository.save(
+                Rule.ofNewRule(
+                        ruleGroup,
+                        request.getRuleName(),
+                        request.getRuleDescription(),
+                        request.getRulePriority()
+                )
         );
         log.debug("registerRule rule : {}", rule);
+
+        TriggerEvent trigger = triggerRepository.save(TriggerEvent.ofNewTriggerEvent(rule, "AI_DATA_RECEIVED", "{\"source\":\"AI\"}"));
+        log.debug("registerRule trigger : {}", trigger);
+
+        rule.getTriggerEventList().add(trigger);
 
         MemberResponse memberResponse = response.getBody();
         log.debug("registerRule member : {}", memberResponse);

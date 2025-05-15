@@ -19,7 +19,7 @@ public class RuleSchedule {
      * 스케줄의 고유 식별자(PK). 자동 증가 방식으로 생성됩니다.
      */
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "schedule_no")
     private Long scheduleNo;
 

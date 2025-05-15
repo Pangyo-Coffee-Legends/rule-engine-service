@@ -1,8 +1,10 @@
 package com.nhnacademy.ruleengineservice.dto.condition;
 
-import jakarta.persistence.Column;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 조건(Condition) 등록 요청을 위한 DTO 클래스입니다.
@@ -23,7 +25,9 @@ import lombok.Value;
  *
  * @author 강승우
  */
-@Value
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ConditionRegisterRequest {
 
     /**
@@ -63,6 +67,6 @@ public class ConditionRegisterRequest {
      * 숫자가 낮을수록 높은 우선순위를 가집니다.
      * conditions 테이블의 con_priority 컬럼과 매핑됩니다.
      */
-    @Column(nullable = false)
+    @Min(value = 0, message = "0 이상이어야합니다.")
     Integer conPriority;
 }

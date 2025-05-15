@@ -20,4 +20,6 @@ public class ActionNotFoundException extends RuntimeException {
     public ActionNotFoundException(Long message) {
         super("Action Not Found : %d".formatted(message));
     }
+
+    public ActionNotFoundException(String message) { super(message); }
 }

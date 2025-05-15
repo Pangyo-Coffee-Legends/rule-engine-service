@@ -9,6 +9,7 @@ import com.nhnacademy.ruleengineservice.repository.trigger.TriggerRepository;
 import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.Map;
  * - 입력 데이터(facts)와 룰셋을 받아 조건 평가, 액션 실행, 결과 반환을 수행합니다.
  * - 트리거, 스케줄, 외부 이벤트 등 다양한 상황에서 호출될 수 있습니다.
  */
+@Slf4j
 @Service
 @Transactional
 public class RuleEngineService {
@@ -56,6 +58,7 @@ public class RuleEngineService {
      * 트리거 이벤트에 따른 룰 실행
      */
     public List<RuleEvaluationResult> executeTriggeredRules(String eventType, String eventParams, Map<String, Object> facts) {
+        log.debug("RuleEngineService 실행 - eventType: {}, facts: {}", eventType, facts);
         // 트리거 이벤트로 실행 대상 룰 찾기
         List<TriggerEvent> triggerEvents = triggerRepository.findByEventType(eventType);
         List<Rule> rulesToEvaluate = triggerEvents.stream()
@@ -81,8 +84,8 @@ public class RuleEngineService {
 
         // 확장된 컨텍스트 생성
         Map<String, Object> enrichedContext = new HashMap<>(facts);
-        enrichedContext.put("ruleName", rule.getRuleName());
         enrichedContext.put("ruleNo", rule.getRuleNo());
+        enrichedContext.put("ruleName", rule.getRuleName());
         enrichedContext.put("executionTime", LocalDateTime.now());
 
         // 조건 평가 및 결과 기록

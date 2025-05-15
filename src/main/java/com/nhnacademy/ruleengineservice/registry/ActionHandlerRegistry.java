@@ -2,7 +2,8 @@ package com.nhnacademy.ruleengineservice.registry;
 
 import com.nhnacademy.ruleengineservice.exception.action.UnsupportedActionTypeException;
 import com.nhnacademy.ruleengineservice.handler.ActionHandler;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,13 +18,18 @@ import java.util.List;
  * @author 강승우
  */
 @Component
-@RequiredArgsConstructor
 public class ActionHandlerRegistry {
 
     /**
      * 등록된 모든 {@link ActionHandler} 구현체 목록입니다.
      */
     private final List<ActionHandler> handlers;
+
+    @Lazy
+    @Autowired
+    public ActionHandlerRegistry(List<ActionHandler> handlers) {
+        this.handlers = handlers;
+    }
 
     /**
      * 주어진 액션 타입(actType)을 지원하는 {@link ActionHandler}를 반환합니다.

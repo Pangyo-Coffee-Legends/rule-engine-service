@@ -123,6 +123,22 @@ public class RuleGroup {
     }
 
     /**
+     * 규칙 그룹(Rule Group)의 이름, 설명, 우선순위 값을 수정합니다.
+     * <p>
+     * 이 메서드는 엔티티의 주요 속성(이름, 설명, 우선순위)을 변경할 때 사용하며,
+     * JPA의 변경 감지(dirty checking) 기능에 의해 트랜잭션 커밋 시점에 자동으로 DB에 반영됩니다.
+     *
+     * @param ruleGroupName        새로 설정할 규칙 그룹 이름
+     * @param ruleGroupDescription 새로 설정할 규칙 그룹 설명
+     * @param priority             새로 설정할 규칙 그룹 우선순위
+     */
+    public void ruleGroupUpdate(String ruleGroupName, String ruleGroupDescription, Integer priority) {
+        this.ruleGroupName = ruleGroupName;
+        this.ruleGroupDescription = ruleGroupDescription;
+        this.priority = priority;
+    }
+
+    /**
      * 생성시 자동으로 생성 날짜를 만들어 준다.
      */
     @PrePersist

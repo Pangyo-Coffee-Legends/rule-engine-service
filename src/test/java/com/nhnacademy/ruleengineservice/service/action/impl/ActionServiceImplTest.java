@@ -99,6 +99,131 @@ class ActionServiceImplTest {
     }
 
     @Test
+    @DisplayName("deleteActionByRuleNoAndActionNo - Rule이 없으면 RuleNotFoundException 발생")
+    void deleteAction_RuleNotFound_ThrowsRuleNotFoundException() {
+        Long ruleNo = 1L;
+        Long actionNo = 10L;
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(null);
+
+        assertThrows(RuleNotFoundException.class, () ->
+                actionService.deleteActionByRuleNoAndActionNo(ruleNo, actionNo)
+        );
+        verify(ruleService).getRuleEntity(ruleNo);
+        verifyNoInteractions(actionRepository);
+    }
+
+    @Test
+    @DisplayName("deleteActionByRuleNoAndActionNo - Action이 없으면 ActionNotFoundException 발생")
+    void deleteAction_ActionNotFound_ThrowsActionNotFoundException() {
+        Long ruleNo = 2L;
+        Long actionNo = 20L;
+        Rule mockRule = mock(Rule.class);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.empty());
+
+        assertThrows(ActionNotFoundException.class, () ->
+                actionService.deleteActionByRuleNoAndActionNo(ruleNo, actionNo)
+        );
+        verify(actionRepository).findById(actionNo);
+        verify(actionRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteActionByRuleNoAndActionNo - Action이 다른 Rule에 속하면 IllegalArgumentException 발생")
+    void deleteAction_ActionBelongsToOtherRule_ThrowsIllegalArgumentException() {
+        Long ruleNo = 3L;
+        Long actionNo = 30L;
+        Long otherRuleNo = 999L;
+
+        Rule mockRule = mock(Rule.class);
+        Rule otherRule = mock(Rule.class);
+        Action mockAction = mock(Action.class);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
+        when(mockAction.getRule()).thenReturn(otherRule);
+        when(otherRule.getRuleNo()).thenReturn(otherRuleNo);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                actionService.deleteActionByRuleNoAndActionNo(ruleNo, actionNo)
+        );
+        assertEquals("Action does not belong to the specified rule", exception.getMessage());
+        verify(actionRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteActionByRuleNoAndActionNo - 정상 삭제 시 Action 삭제 및 로깅")
+    void deleteAction_ValidRequest_DeletesAction() {
+        Long ruleNo = 4L;
+        Long actionNo = 40L;
+
+        Rule mockRule = mock(Rule.class);
+        Action mockAction = mock(Action.class);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(actionRepository.findById(actionNo)).thenReturn(Optional.of(mockAction));
+        when(mockAction.getRule()).thenReturn(mockRule);
+        when(mockRule.getRuleNo()).thenReturn(ruleNo);
+
+        actionService.deleteActionByRuleNoAndActionNo(ruleNo, actionNo);
+
+        verify(actionRepository).delete(mockAction);
+        verify(mockAction).getRule();
+        verify(mockRule).getRuleNo();
+    }
+
+    @Test
+    @DisplayName("deleteActionByRule - Rule이 존재 하지 않을 경우 RuleNotFoundException 발생")
+    void deleteActionByRule_whenRuleNotFound_thenThrowException() {
+        Long ruleNo = 1L;
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(null);
+
+        assertThrows(RuleNotFoundException.class, () -> actionService.deleteActionByRule(ruleNo));
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verifyNoInteractions(actionRepository);
+    }
+
+    @Test
+    @DisplayName("deleteActionByRule - Action이 존재하지 않을 경우 ActionNotFoundException 발생")
+    void deleteActionByRule_ActionsNotFound_ThrowsException() {
+        Long ruleNo = 2L;
+        Rule mockRule = mock(Rule.class);
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(actionRepository.findByRule(mockRule)).thenReturn(Collections.emptyList());
+
+        ActionNotFoundException exception = assertThrows(
+                ActionNotFoundException.class,
+                () -> actionService.deleteActionByRule(ruleNo)
+        );
+
+        assertEquals("action is null", exception.getMessage());
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(actionRepository).findByRule(mockRule);
+        verify(actionRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    @DisplayName("deleteActionByRule - Action이 존재할 경우 정상 삭제 및 로깅")
+    void deleteActionByRule_ActionsExist_DeletesAndLogs() {
+        Long ruleNo = 3L;
+        Rule mockRule = mock(Rule.class);
+        Action action1 = mock(Action.class);
+        Action action2 = mock(Action.class);
+        List<Action> actions = List.of(action1, action2);
+
+        when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
+        when(actionRepository.findByRule(mockRule)).thenReturn(actions);
+
+        actionService.deleteActionByRule(ruleNo);
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(actionRepository).findByRule(mockRule);
+        verify(actionRepository).deleteAll(actions);
+    }
+
+    @Test
     @DisplayName("존재하지 않는 액션 삭제 시 예외 발생")
     void deleteAction_withNonExistentAction_throwsException() {
         // given
@@ -138,35 +263,43 @@ class ActionServiceImplTest {
 
     @Test
     @DisplayName("규칙별 액션 목록 조회 성공")
-    void getActionsByRule() {
+    void getActionsByRule_ValidRuleNo_ReturnsActionResponses() {
         Long ruleNo = 1L;
-
-        RuleGroup group = RuleGroup.ofNewRuleGroup("test1", "des1", 1);
-        Rule mockRule = Rule.ofNewRule(group, "rule1", "rule d1", 1);
-        setField(mockRule, "ruleNo", 1L);
-
-        List<Action> mockActions = new ArrayList<>();
-
-        Action action1 = Action.ofNewAction(mockRule, "EMAIL", "test@example.com", 1);
-        setField(action1, "actNo", 1L);
-
-        Action action2 = Action.ofNewAction(mockRule, "SMS", "합격했습니다.", 2);
-        setField(action2, "actNo", 2L);
-
-        mockActions.add(action1);
-        mockActions.add(action2);
+        RuleGroup ruleGroup = mock();
+        Rule mockRule = Rule.ofNewRule(ruleGroup, "Test Rule", "Description", 1);
+        Action action1 = Action.ofNewAction(mockRule, "ALERT", "Message1", 1);
+        Action action2 = Action.ofNewAction(mockRule, "NOTIFICATION", "Message2", 2);
+        List<Action> mockActions = List.of(action1, action2);
 
         when(ruleService.getRuleEntity(ruleNo)).thenReturn(mockRule);
         when(actionRepository.findByRule(mockRule)).thenReturn(mockActions);
 
-        List<ActionResponse> responses = actionService.getActionsByRule(ruleNo);
+        List<ActionResponse> result = actionService.getActionsByRule(ruleNo);
 
-        assertNotNull(responses);
-        assertAll(
-                () -> assertEquals(2, responses.size()),
-                () -> assertEquals("EMAIL", responses.get(0).getActType()),
-                () -> assertEquals("SMS", responses.get(1).getActType())
-        );
+        assertEquals(2, result.size());
+        assertEquals("ALERT", result.get(0).getActType());
+        assertEquals("NOTIFICATION", result.get(1).getActType());
+
+        verify(ruleService).getRuleEntity(ruleNo);
+        verify(actionRepository).findByRule(mockRule);
+    }
+
+    @Test
+    @DisplayName("모든 액션 조회")
+    void getActions_ReturnsAllActionResponses() {
+        Rule rule = mock();
+        Action action1 = Action.ofNewAction(rule, "ALERT", "Message1", 1);
+        Action action2 = Action.ofNewAction(rule, "NOTIFICATION", "Message2", 2);
+        List<Action> mockActions = List.of(action1, action2);
+
+        when(actionRepository.findAll()).thenReturn(mockActions);
+
+        List<ActionResponse> result = actionService.getActions();
+
+        assertEquals(2, result.size());
+        assertEquals("Message1", result.get(0).getActParam());
+        assertEquals("Message2", result.get(1).getActParam());
+        verify(actionRepository).findAll();
     }
 
     @Test

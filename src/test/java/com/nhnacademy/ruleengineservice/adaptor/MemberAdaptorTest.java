@@ -20,10 +20,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 @SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "member-service.url=http://localhost:${wiremock.server.port}",
-                "feign.client.config.defalut.loggerLever=full"
+                "feign.client.config.defalut.loggerLevel=full"
         }
 )
 @AutoConfigureWireMock(port=0)

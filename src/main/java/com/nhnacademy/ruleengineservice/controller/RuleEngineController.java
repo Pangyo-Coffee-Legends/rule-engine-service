@@ -62,7 +62,8 @@ public class RuleEngineController {
 
         log.debug("executeTriggeredRules : {}", results);
 
-        return ResponseEntity.ok(results);
+        return ResponseEntity
+                .ok(results);
     }
 
     /**
@@ -81,6 +82,7 @@ public class RuleEngineController {
 
         log.debug("executeRule : {}", result);
 
-        return ResponseEntity.ok(result);
+        return ResponseEntity
+                .ok(result);
     }
 }

@@ -6,6 +6,7 @@ import com.nhnacademy.ruleengineservice.dto.condition.ConditionRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResponse;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResult;
 import com.nhnacademy.ruleengineservice.exception.condition.ConditionNotFoundException;
+import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
 import com.nhnacademy.ruleengineservice.repository.condition.ConditionRepository;
 import com.nhnacademy.ruleengineservice.service.condition.ConditionService;
 import com.nhnacademy.ruleengineservice.service.rule.RuleService;
@@ -13,7 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -41,6 +44,8 @@ public class ConditionServiceImpl implements ConditionService {
                 request.getConPriority()
         );
 
+        rule.getConditionList().add(condition);
+
         log.debug("registerCondition : {}", condition);
 
         return toConditionResponse(conditionRepository.save(condition));
@@ -58,6 +63,42 @@ public class ConditionServiceImpl implements ConditionService {
     }
 
     @Override
+    public void deleteConditionByRuleNoAndConditionNo(Long ruleNo, Long conditionNo) {
+        Rule rule = ruleService.getRuleEntity(ruleNo);
+        if (Objects.isNull(rule)) {
+            throw new RuleNotFoundException(ruleNo);
+        }
+
+        Condition condition = conditionRepository.findById(conditionNo)
+                .orElseThrow(() -> new ConditionNotFoundException(conditionNo));
+
+        if (!condition.getRule().getRuleNo().equals(ruleNo)) {
+            throw new IllegalArgumentException("Condition does not belong to the specified rule.");
+        }
+
+        conditionRepository.delete(condition);
+        log.debug("Condition {} associated with ruleNo = {} has been deleted.", conditionNo, ruleNo);
+    }
+
+    @Override
+    public void deleteConditionByRule(Long ruleNo) {
+        Rule rule = ruleService.getRuleEntity(ruleNo);
+
+        if (Objects.isNull(rule)) {
+            throw new RuleNotFoundException(ruleNo);
+        }
+
+        List<Condition> conditionList = conditionRepository.findByRule(rule);
+
+        if (conditionList.isEmpty()) {
+            throw new ConditionNotFoundException("condition is null");
+        }
+
+        conditionRepository.deleteAll(conditionList);
+        log.debug("{} conditions associated with ruleNo = {} have been deleted.", ruleNo, conditionList.size());
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public ConditionResponse getCondition(Long conditionNo) {
         log.debug("getCondition start");
@@ -70,15 +111,23 @@ public class ConditionServiceImpl implements ConditionService {
     @Override
     @Transactional(readOnly = true)
     public List<ConditionResponse> getConditionsByRule(Long ruleNo) {
-        List<Condition> conditionList = conditionRepository.findAll();
+        Rule rule = ruleService.getRuleEntity(ruleNo);
 
-        if (conditionList.isEmpty()) {
-            log.error("getConditionsByRule condition list not found");
-            throw new ConditionNotFoundException("Condition List Not Found");
-        }
+        List<Condition> conditionList = conditionRepository.findByRule(rule);
 
         log.debug("conditionList : {}", conditionList);
 
+        return conditionList.stream()
+                .map(this::toConditionResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ConditionResponse> getConditions() {
+        List<Condition> conditionList = conditionRepository.findAll();
+
+        log.debug("get condition list : {}", conditionList);
         return conditionList.stream()
                 .map(this::toConditionResponse)
                 .toList();
@@ -169,15 +218,12 @@ public class ConditionServiceImpl implements ConditionService {
 
     @Override
     public List<String> getRequiredFieldsByRule(Rule rule) {
-        Set<String> requiredFields = new HashSet<>();
-
-        // 룰에 연결된 조건에서 사용하는 필드 추출
-        List<Condition> conditions = conditionRepository.findByRule(rule);
-        for (Condition condition : conditions) {
-            requiredFields.add(condition.getConField());
-        }
-
-        return new ArrayList<>(requiredFields);
+        // Rule 엔티티에서 직접 조건 리스트 가져오기 (추가 쿼리 방지)
+        return rule.getConditionList().stream()
+                .map(Condition::getConField)
+                .filter(conField -> conField != null && !conField.isEmpty()) // 유효성 검사
+                .distinct() // 중복 제거
+                .toList();
     }
 
     @Override

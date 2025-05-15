@@ -3,12 +3,12 @@ package com.nhnacademy.ruleengineservice.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupResponse;
+import com.nhnacademy.ruleengineservice.dto.rule.RuleGroupUpdateRequest;
 import com.nhnacademy.ruleengineservice.service.rule.RuleGroupService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,7 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ActiveProfiles("test")
 @WebMvcTest(RuleGroupController.class)
-@AutoConfigureMockMvc(addFilters = false)
 class RuleGroupControllerTest {
 
     @Autowired
@@ -50,7 +49,7 @@ class RuleGroupControllerTest {
         mockMvc.perform(post("/api/v1/rule-groups")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.ruleGroupNo").value(1))
                 .andExpect(jsonPath("$.ruleGroupName").value("테스트 그룹"))
                 .andExpect(jsonPath("$.ruleGroupDescription").value("설명"))
@@ -97,6 +96,32 @@ class RuleGroupControllerTest {
                 .andDo(print());
 
         Mockito.verify(ruleGroupService).getAllRuleGroups();
+    }
+
+    @Test
+    @DisplayName("룰 그룹 수정 테스트")
+    void updatedRuleGroup() throws Exception {
+        RuleGroupUpdateRequest request = new RuleGroupUpdateRequest("수정된 룰 그룹", "수정된 설명", 1);
+
+        RuleGroupResponse response = new RuleGroupResponse(
+                1L,
+                "수정된 룰 그룹",
+                "수정된 설명",
+                1,
+                true
+        );
+
+        Mockito.when(ruleGroupService.updateRuleGroup(Mockito.anyLong(), Mockito.any()))
+                .thenReturn(response);
+
+        mockMvc.perform(put("/api/v1/rule-groups/{no}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$.ruleGroupName").value("수정된 룰 그룹"))
+                .andExpect(jsonPath("$.ruleGroupDescription").value("수정된 설명"))
+                .andExpect(jsonPath("$.priority").value(1))
+                .andDo(print());
     }
 
     @Test
