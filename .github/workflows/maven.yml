@@ -26,6 +26,17 @@ jobs:
           SPRING_MAIL_NAME: ${{ secrets.MAIL_NAME }}
           SPRING_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
 
+      - name: Prepare server directory
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_IP }}
+          username: ${{ secrets.SSH_ID }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p ~/threshold/target
+            rm -f ~/threshold/target/*.jar
+
       - name: upload threshold jar to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -34,7 +45,19 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "target/*.jar"
-          target: "~/threshold/"
+          target: "~/threshold/target"
+          strip_components: 1
+          overwrite: true
+
+      - name: Create application.properties file
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_IP }}
+          username: ${{ secrets.SSH_ID }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            echo "${{ secrets.APPLICATION_PROPERTIES }}" > ~/threshold/application.properties
 
       - name: execute threshold startup script
         uses: appleboy/ssh-action@master
@@ -43,6 +66,7 @@ jobs:
           username: ${{ secrets.SSH_ID }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          script_stop: true
-          script: "cd ~/threshold && ./startup.sh"
+          script: |
+            chmod +x ~/threshold/startup.sh
+            cd ~/threshold && ./startup.sh
 
