@@ -7,6 +7,7 @@ import com.nhnacademy.ruleengineservice.dto.engine.RuleEvaluationResult;
 import com.nhnacademy.ruleengineservice.service.engine.RuleEngineService;
 import com.nhnacademy.ruleengineservice.service.schedule.ComfortResultService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ComfortScheduler {
@@ -30,9 +32,15 @@ public class ComfortScheduler {
 
         for (ComfortInfoDTO info : infos) {
             Map<String, Object> facts = objectMapper.convertValue(info, new TypeReference<>() {});
+            log.info("Processing {} comfort infos", infos.size());
+
+            facts.put("comfortInfo", info);
 
             List<RuleEvaluationResult> results = ruleEngineService.executeTriggeredRules(
                     "AI_DATA_RECEIVED", "{\"source\":\"AI\"}", facts);
+
+            log.info("룰 엔진 실행결과 : {}개", results.size());
+
             allResults.addAll(results);
         }
 

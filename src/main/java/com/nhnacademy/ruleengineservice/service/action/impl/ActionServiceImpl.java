@@ -164,14 +164,18 @@ public class ActionServiceImpl implements ActionService {
     public List<ActionResult> executeActionsForRule(Rule rule, Map<String, Object> context) {
         // 1. 룰에 연결된 액션 목록 가져오기
         List<Action> actions = actionRepository.findByRule(rule);
+        log.info("[액션 실행] 룰 ID {} - 연결된 액션 {}개", rule.getRuleNo(), actions.size());
 
         // 2. 각 액션 실행 후 결과 수집
         List<ActionResult> results = new ArrayList<>();
         for (Action action : actions) {
-            ActionResult result = performAction(action.getActNo(), context);
-            log.debug("executeActionsForRule : {}", result);
-
-            results.add(result);
+            try {
+                ActionResult result = performAction(action.getActNo(), context);
+                results.add(result);
+                log.info("[액션 성공] 액션 ID {} - 결과: {}", action.getActNo(), result);
+            } catch (Exception e) {
+                log.error("[액션 실패] 액션 ID {} - 오류: {}", action.getActNo(), e.getMessage());
+            }
         }
 
         return results;

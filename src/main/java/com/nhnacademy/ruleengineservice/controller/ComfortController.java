@@ -28,7 +28,10 @@ public class ComfortController {
 
     @GetMapping("/scheduled-result")
     public ResponseEntity<List<RuleEvaluationResult>> getScheduledResult() {
-        log.debug("scheduled-result success");
-        return ResponseEntity.ok(comfortResultService.getLatestResults());
+        List<RuleEvaluationResult> results = comfortResultService.getLatestResults();
+
+        log.info("GET /scheduled-result - 결과 개수 : {}개", results.size());
+
+        return ResponseEntity.ok(results);
     }
 }
