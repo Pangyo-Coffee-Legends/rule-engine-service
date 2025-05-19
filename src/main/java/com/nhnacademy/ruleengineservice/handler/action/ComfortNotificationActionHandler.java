@@ -5,10 +5,8 @@ import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
 import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
 import com.nhnacademy.ruleengineservice.exception.action.ActionHandlerException;
 import com.nhnacademy.ruleengineservice.handler.ActionHandler;
-import com.nhnacademy.ruleengineservice.service.action.ActionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -20,8 +18,17 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ComfortNotificationActionHandler implements ActionHandler {
 
-    @Lazy
-    private final ActionService actionService;
+    // 디바이스 타입 상수
+    private static final String AIRCON = "aircon";
+    private static final String DEHUMIDIFIER = "dehumidifier";
+    private static final String HEATER = "heater";
+    private static final String HUMIDIFIER = "humidifier";
+    private static final String VENTILATOR = "ventilator";
+
+    // 쾌적 지수 상수
+    private static final String HOT_HUMID = "덥고 습함";
+    private static final String COLD_DRY = "춥고 건조";
+    private static final String OPTIMAL = "최적 쾌적";
 
     @Override
     public boolean supports(String actType) {
@@ -30,38 +37,27 @@ public class ComfortNotificationActionHandler implements ActionHandler {
 
     @Override
     public ActionResult handle(Action action, Map<String, Object> context) throws ActionHandlerException {
-        // 1. 컨텍스트에서 ComfortInfoDTO 추출
+        // 1. context 에서 ComfortInfoDTO 추출
         ComfortInfoDTO comfortInfo = (ComfortInfoDTO) context.get("comfortInfo");
         if (comfortInfo == null) {
-            log.error("컨텍스트에 ComfortInfoDTO가 없습니다.");
-            return new ActionResult(
-                    action.getActNo(),
-                    false,
-                    action.getActType(),
-                    "ComfortInfoDTO 누락",
-                    null,
-                    LocalDateTime.now()
-            );
+            log.error("[액션 실패] 액션 ID {} - ComfortInfoDTO 누락", action.getActNo());
+            return createErrorResult(action, "ComfortInfoDTO 누락");
         }
 
-        // 2. 디바이스 명령 생성 (기존 로직)
-        Map<String, Boolean> deviceCommands = new HashMap<>();
-        if (comfortInfo.getComfortIndex() != null) {
-            switch (comfortInfo.getComfortIndex()) {
-                case "덥고 습함" -> deviceCommands.putAll(Map.of("aircon", true, "dehumidifier", true));
-                case "춥고 건조" -> deviceCommands.putAll(Map.of("heater", true, "humidifier", true));
-                case "최적 쾌적" -> deviceCommands.putAll(Map.of("aircon", false, "heater", false));
-                default -> deviceCommands.put("device", false);
-            }
-        }
-        if ("CO2 주의".equals(comfortInfo.getCo2Comment())) {
-            deviceCommands.put("ventilator", true);
+        // 2. 쾌적 지수 null 체크
+        if (comfortInfo.getComfortIndex() == null) {
+            log.warn("쾌적 지수가 설정되지 않았습니다. 액션 ID: {}", action.getActNo());
         }
 
-        // 3. 출력 데이터 구성 (ComfortInfoDTO 포함)
-        Map<String, Object> output = new HashMap<>();
-        output.put("deviceCommands", deviceCommands);
-        output.put("comfortInfo", comfortInfo); // ComfortInfoDTO 추가
+        // 3. device 명령 생성
+        Map<String, Boolean> deviceCommands = generateDeviceCommands(comfortInfo);
+        log.debug("[액션 실행] 액션 ID {} - 장치 명령: {}", action.getActNo(), deviceCommands);
+
+        // 4. 출력 데이터 구성
+        Map<String, Object> output = Map.of(
+                "deviceCommands", deviceCommands,
+                "comfortInfo", comfortInfo
+        );
 
         return new ActionResult(
                 action.getActNo(),
@@ -69,6 +65,45 @@ public class ComfortNotificationActionHandler implements ActionHandler {
                 action.getActType(),
                 "쾌적도 알림 전송 성공",
                 output,
+                LocalDateTime.now()
+        );
+    }
+
+    private Map<String, Boolean> generateDeviceCommands(ComfortInfoDTO comfortInfo) {
+        Map<String, Boolean> commands = new HashMap<>();
+
+        if (comfortInfo.getComfortIndex() != null) {
+            switch (comfortInfo.getComfortIndex()) {
+                case HOT_HUMID -> {
+                    commands.put(AIRCON, true);
+                    commands.put(DEHUMIDIFIER, true);
+                }
+                case COLD_DRY -> {
+                    commands.put(HEATER, true);
+                    commands.put(HUMIDIFIER, true);
+                }
+                case OPTIMAL -> {
+                    commands.put(AIRCON, false);
+                    commands.put(HEATER, false);
+                }
+                default -> log.warn("지원되지 않는 쾌적 지수: {}", comfortInfo.getComfortIndex());
+            }
+        }
+
+        if ("CO2 주의".equals(comfortInfo.getCo2Comment())) {
+            commands.put(VENTILATOR, true);
+        }
+
+        return commands;
+    }
+
+    private ActionResult createErrorResult(Action action, String message) {
+        return new ActionResult(
+                action.getActNo(),
+                false,
+                action.getActType(),
+                message,
+                null,
                 LocalDateTime.now()
         );
     }

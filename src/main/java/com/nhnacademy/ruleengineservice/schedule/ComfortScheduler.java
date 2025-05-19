@@ -44,6 +44,8 @@ public class ComfortScheduler {
             allResults.addAll(results);
         }
 
-        comfortResultService.updateResults(allResults);
+        if (!allResults.isEmpty()) {
+            comfortResultService.updateResults(allResults);
+        }
     }
 }
