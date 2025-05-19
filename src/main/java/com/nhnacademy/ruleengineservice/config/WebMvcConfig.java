@@ -45,8 +45,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                //.allowedOriginPatterns("https://aiot2.live", "http://localhost:3000")
-                .allowedOriginPatterns("*") // 우리 도메인 설정
+                .allowedOriginPatterns("https://aiot2.live", "http://localhost:3000", "http://localhost:10253")
+//                .allowedOriginPatterns("*") // 우리 도메인 설정
                 .allowedMethods("GET", "POST", "PUT", "DELETE") // 기타 들어갈 method
                 .allowedHeaders("*")
                 .allowCredentials(true); // front 가 인증 헤더 보낸다면 true
