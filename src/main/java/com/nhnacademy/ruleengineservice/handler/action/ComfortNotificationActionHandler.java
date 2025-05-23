@@ -90,9 +90,7 @@ public class ComfortNotificationActionHandler implements ActionHandler {
             }
         }
 
-        if ("CO2 주의".equals(comfortInfo.getCo2Comment())) {
-            commands.put(VENTILATOR, true);
-        }
+        commands.put(VENTILATOR, "CO2 주의".equals(comfortInfo.getCo2Comment()));
 
         return commands;
     }

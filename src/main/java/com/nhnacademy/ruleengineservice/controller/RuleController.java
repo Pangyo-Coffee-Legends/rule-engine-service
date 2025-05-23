@@ -63,6 +63,11 @@ public class RuleController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 룰 그룹에 해당하는 규칙들을 조회합니다.
+     * @param no 룰 그룹 식별자
+     * @return 룰 DTO 리스트
+     */
     @GetMapping("/group/{no}")
     public ResponseEntity<List<RuleResponse>> getRulesByRuleGroup(@PathVariable Long no) {
         List<RuleResponse> responseList = ruleService.getRulesByGroup(no);

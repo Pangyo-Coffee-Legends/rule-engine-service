@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <logger name="com.nhnacademy.ruleengineservice.controller" level="DEBUG" />
+
     <!-- ① 로그를 ./logs 폴더에 남기도록 기본값 설정 -->
     <springProperty name="LOG_PATH" source="logging.file.path"  defaultValue="./logs"/>
 
