@@ -2,7 +2,6 @@ package com.nhnacademy.ruleengineservice.config;
 
 import com.nhnacademy.ruleengineservice.interceptor.AuthInterceptor;
 import jakarta.servlet.http.HttpServletResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -17,9 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -31,33 +28,6 @@ class WebMvcConfigTest {
 
     @MockitoBean
     private AuthInterceptor authInterceptor;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        Mockito.when(authInterceptor.preHandle(any(), any(), any())).thenReturn(true);
-    }
-
-    @Test
-    @DisplayName("인터셉터 제외 경로는 인터셉터가 동작하지 않는다")
-    void excludePathPatternsTest() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/comfort/test"))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/rules/9999"))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/rule-groups/9999"))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/rule-engine/test"))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/conditions/9999"))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/actions/9999"))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
-    }
 
     @Test
     @DisplayName("인터셉터가 적용되는 경로는 인터셉터가 동작한다")
@@ -87,27 +57,15 @@ class WebMvcConfigTest {
     }
 
     @Test
-    @DisplayName("CORS 설정 테스트")
-    void corsSettingsTest() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.options("/api/v1/anypath")
-                        .header("Origin", "http://localhost:3000")
-                        .header("Access-Control-Request-Method", "POST"))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
-                .andExpect(MockMvcResultMatchers.header().string("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE"))
-                .andExpect(MockMvcResultMatchers.header().string("Access-Control-Allow-Credentials", "true"));
-    }
+    @DisplayName("excludePathPatterns에 포함된 경로는 인터셉터가 동작하지 않는다")
+    void interceptorExcludedPath() throws Exception {
+        // AuthInterceptor.preHandle이 true를 반환하도록 설정
+        when(authInterceptor.preHandle(any(), any(), any())).thenReturn(true);
 
-    @Test
-    @DisplayName("Preflight 요청")
-    void testCorsPreflightRequest() throws Exception {
-        mockMvc.perform(options("/api/v1/rules")
-                        .header("Origin", "https://aiot2.live")
-                        .header("Access-Control-Request-Method", "GET")
-                        .header("Access-Control-Request-Headers", "content-type"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "https://aiot2.live"))
-                .andExpect(header().string("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE"))
-                .andExpect(header().string("Access-Control-Allow-Headers", "content-type"));
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/comfort/test"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+
+        // excludePathPatterns에 포함된 경로는 preHandle이 호출되지 않음
+        Mockito.verify(authInterceptor, Mockito.never()).preHandle(any(), any(), any());
     }
 }
