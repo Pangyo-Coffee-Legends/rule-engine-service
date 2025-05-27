@@ -2,6 +2,7 @@ package com.nhnacademy.ruleengineservice.service.rule.impl;
 
 import com.nhnacademy.ruleengineservice.adaptor.MemberAdaptor;
 import com.nhnacademy.ruleengineservice.auth.MemberThreadLocal;
+import com.nhnacademy.ruleengineservice.domain.action.Action;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleGroup;
 import com.nhnacademy.ruleengineservice.domain.rule.RuleMemberMapping;
@@ -33,6 +34,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -190,18 +192,23 @@ class RuleServiceImplTest {
     @Test
     @DisplayName("규칙 삭제 성공")
     void deleteRule() {
-        Long ruleNo = 1L;
-        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+        Long testRuleNo = 1L;
+        MemberResponse adminMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
 
-        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
-        MemberThreadLocal.setMemberEmail(testEmail);
+        Rule mockRule = mock(Rule.class);
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(adminMember));
+        when(ruleRepository.existsById(testRuleNo)).thenReturn(true);
+        when(ruleRepository.findById(testRuleNo)).thenReturn(Optional.of(mockRule));
+        when(mockRule.getActionList()).thenReturn(Collections.emptyList());
+        when(mockRule.getConditionList()).thenReturn(Collections.emptyList());
+        when(mockRule.getRuleParameterList()).thenReturn(Collections.emptyList());
+        when(mockRule.getTriggerEventList()).thenReturn(List.of());
 
-        when(ruleRepository.existsById(ruleNo)).thenReturn(true);
+        assertDoesNotThrow(() -> ruleService.deleteRule(testRuleNo));
 
-        ruleService.deleteRule(ruleNo);
-
-        verify(ruleRepository).existsById(ruleNo);
-        verify(ruleRepository).deleteById(ruleNo);
+        verify(ruleMemberMappingRepository).deleteByRule_RuleNo(testRuleNo);
+        verify(triggerRepository).deleteAll(anyList());
+        verify(ruleRepository).delete(mockRule);
     }
 
     @Test
@@ -216,20 +223,37 @@ class RuleServiceImplTest {
     }
 
     @Test
-    @DisplayName("규칙 삭제 실패")
-    void deleteRule_exception2() {
-        Long nonExistentRuleNo = 999L;
+    @DisplayName("존재하지 않는 규칙 삭제 시도")
+    void deleteRule_notFound() {
+        Long testRuleNo = 1L;
+        MemberResponse adminMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
 
-        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(adminMember));
+        when(ruleRepository.existsById(testRuleNo)).thenReturn(false);
 
-        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        assertThrows(RuleNotFoundException.class, () -> ruleService.deleteRule(testRuleNo));
+        verify(ruleRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("하위 요소가 남아있을 때 삭제 불가")
+    void deleteRule_withChildElements() {
+        Long testRuleNo = 1L;
+        MemberResponse adminMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        Rule mockRule = mock(Rule.class);
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(adminMember));
         MemberThreadLocal.setMemberEmail(testEmail);
+        when(ruleRepository.existsById(testRuleNo)).thenReturn(true);
+        when(ruleRepository.findById(testRuleNo)).thenReturn(Optional.of(mockRule));
+        when(mockRule.getActionList()).thenReturn(List.of(mock(Action.class))); // 하위 요소 존재
+        when(mockRule.getConditionList()).thenReturn(Collections.emptyList());
+        when(mockRule.getRuleParameterList()).thenReturn(Collections.emptyList());
 
-        when(ruleRepository.existsById(nonExistentRuleNo)).thenReturn(false);
-
-        assertThrows(RuleNotFoundException.class, () -> ruleService.deleteRule(nonExistentRuleNo));
-
-        verify(ruleRepository, never()).deleteById(anyLong());
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> ruleService.deleteRule(testRuleNo));
+        assertEquals("하위 요소가 남아 있어 삭제할 수 없습니다.", ex.getMessage());
+        verify(ruleRepository, never()).delete(any());
     }
 
     @Test
@@ -240,6 +264,16 @@ class RuleServiceImplTest {
 
         assertThrows(AccessDeniedException.class,
                 () -> ruleService.deleteRule(1L));
+    }
+
+    @Test
+    @DisplayName("회원 정보가 없을 때 삭제 불가")
+    void deleteRule_noMember() {
+        Long testRuleNo = 1L;
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.notFound().build());
+
+        assertThrows(MemberNotFoundException.class, () -> ruleService.deleteRule(testRuleNo));
+        verify(ruleRepository, never()).delete(any());
     }
 
     @Test
