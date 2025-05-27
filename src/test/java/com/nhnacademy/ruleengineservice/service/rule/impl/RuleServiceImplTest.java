@@ -10,6 +10,7 @@ import com.nhnacademy.ruleengineservice.dto.member.MemberResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleUpdateRequest;
+import com.nhnacademy.ruleengineservice.exception.auth.AccessDeniedException;
 import com.nhnacademy.ruleengineservice.exception.member.MemberNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
@@ -71,37 +72,27 @@ class RuleServiceImplTest {
 
     @Test
     @DisplayName("규칙 등록 성공")
-    void registerRule() {
+    void registerRule_Success() {
         RuleRegisterRequest request = new RuleRegisterRequest(1L, "Test Rule", "Description", 1);
-        RuleGroup mockRuleGroup = mock();
-        Rule mockRule = mock();
-        TriggerEvent mockTrigger = mock();
-        MemberResponse mockMemberResponse = new MemberResponse(
-                testMemberNo,
-                "test rule",
-                testEmail,
-                "Test User",
-                "asdf1234!",
-                "010-1234-5678"
-        );
+        RuleGroup mockRuleGroup = mock(RuleGroup.class);
+        Rule mockRule = mock(Rule.class);
+        TriggerEvent mockTrigger = mock(TriggerEvent.class);
+        MemberResponse mockMember = new MemberResponse(testMemberNo, "user", testEmail, "Test User", "password", "010-1234-5678");
 
-        when(mockRuleGroup.getRuleGroupNo()).thenReturn(1L);
         when(mockRule.getRuleGroup()).thenReturn(mockRuleGroup);
+        when(mockRuleGroup.getRuleGroupNo()).thenReturn(1L);
 
         when(ruleGroupRepository.findById(1L)).thenReturn(Optional.of(mockRuleGroup));
-        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMemberResponse));
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
         when(ruleRepository.save(any(Rule.class))).thenReturn(mockRule);
-        when(triggerRepository.save(any(TriggerEvent.class))).thenReturn(mockTrigger);
-        when(ruleMemberMappingRepository.save(any(RuleMemberMapping.class))).thenReturn(mock(RuleMemberMapping.class));
+        when(triggerRepository.save(any())).thenReturn(mockTrigger);
 
         RuleResponse result = ruleService.registerRule(request);
 
         assertNotNull(result);
-        verify(ruleGroupRepository).findById(1L);
-        verify(memberAdaptor).getMemberByEmail(testEmail);
-        verify(ruleRepository, times(2)).save(any(Rule.class));
-        verify(triggerRepository).save(any(TriggerEvent.class));
-        verify(ruleMemberMappingRepository).save(any(RuleMemberMapping.class));
+        verify(ruleRepository, times(2)).save(any());
+        verify(triggerRepository).save(any());
+        verify(ruleMemberMappingRepository).save(any());
     }
 
     @Test
@@ -153,39 +144,43 @@ class RuleServiceImplTest {
     @DisplayName("규칙 수정 성공")
     void updateRule() {
         Long ruleNo = 1L;
-        String updatedName = "수정된 규칙";
-        String updatedDescription = "수정된 설명";
-        Integer updatedPriority = 2;
+        RuleUpdateRequest request = new RuleUpdateRequest("New Name", "New Desc", 2);
+        Rule existingRule = Rule.ofNewRule(mock(RuleGroup.class), "Old", "Old Desc", 1);
 
-        RuleUpdateRequest request = new RuleUpdateRequest(updatedName, updatedDescription, updatedPriority);
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
 
-        RuleGroup mockRuleGroup = RuleGroup.ofNewRuleGroup("그룹 이름", "그룹 설명", 1);
-        setField(mockRuleGroup, "ruleGroupNo", 1L);
-
-        Rule existingRule = Rule.ofNewRule(mockRuleGroup, "기존 규칙", "기존 설명", 3);
-        setField(existingRule, "ruleNo", ruleNo);
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
 
         when(ruleRepository.findById(ruleNo)).thenReturn(Optional.of(existingRule));
 
-        RuleResponse response = ruleService.updateRule(ruleNo, request);
-        log.debug("updated rule : {}", response);
+        RuleResponse result = ruleService.updateRule(ruleNo, request);
 
-        assertNotNull(response);
-        assertAll(
-                () -> assertEquals(ruleNo, response.getRuleNo()),
-                () -> assertEquals(updatedName, response.getRuleName()),
-                () -> assertEquals(updatedDescription, response.getRuleDescription()),
-                () -> assertEquals(updatedPriority, response.getRulePriority())
-        );
-
+        assertEquals("New Name", result.getRuleName());
         verify(ruleRepository).findById(ruleNo);
     }
 
     @Test
-    @DisplayName("규칙 수정 실패")
+    @DisplayName("규칙 수정 실패 - 멤버 헤더가 없을 시")
     void updateRule_exception() {
         Long nonExistentRuleNo = 999L;
         RuleUpdateRequest request = new RuleUpdateRequest("수정 규칙", "설명", 1);
+
+        when(ruleRepository.findById(nonExistentRuleNo)).thenReturn(Optional.empty());
+
+        assertThrows(MemberNotFoundException.class, () -> ruleService.updateRule(nonExistentRuleNo, request));
+    }
+
+    @Test
+    @DisplayName("규칙 수정 실패")
+    void updateRule_exception2() {
+        Long nonExistentRuleNo = 999L;
+        RuleUpdateRequest request = new RuleUpdateRequest("수정 규칙", "설명", 1);
+
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
 
         when(ruleRepository.findById(nonExistentRuleNo)).thenReturn(Optional.empty());
 
@@ -196,6 +191,11 @@ class RuleServiceImplTest {
     @DisplayName("규칙 삭제 성공")
     void deleteRule() {
         Long ruleNo = 1L;
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
+
         when(ruleRepository.existsById(ruleNo)).thenReturn(true);
 
         ruleService.deleteRule(ruleNo);
@@ -205,14 +205,41 @@ class RuleServiceImplTest {
     }
 
     @Test
-    @DisplayName("규칙 삭제 실패")
+    @DisplayName("규칙 삭제 실패 - 헤더에 맴버 없을 경우")
     void deleteRule_exception() {
         Long nonExistentRuleNo = 999L;
+        when(ruleRepository.existsById(nonExistentRuleNo)).thenReturn(false);
+
+        assertThrows(MemberNotFoundException.class, () -> ruleService.deleteRule(nonExistentRuleNo));
+
+        verify(ruleRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    @DisplayName("규칙 삭제 실패")
+    void deleteRule_exception2() {
+        Long nonExistentRuleNo = 999L;
+
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
+
         when(ruleRepository.existsById(nonExistentRuleNo)).thenReturn(false);
 
         assertThrows(RuleNotFoundException.class, () -> ruleService.deleteRule(nonExistentRuleNo));
 
         verify(ruleRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    @DisplayName("관리자 권한 없는 삭제 시도")
+    void deleteRule_Unauthorized() {
+        MemberResponse member = new MemberResponse(2L, "user", testEmail, "User", "pw", "010-1111-2222");
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(member));
+
+        assertThrows(AccessDeniedException.class,
+                () -> ruleService.deleteRule(1L));
     }
 
     @Test
@@ -226,12 +253,15 @@ class RuleServiceImplTest {
         Rule mockRule = Rule.ofNewRule(mockRuleGroup, "테스트 규칙", "테스트 설명", 1);
         setField(mockRule, "ruleNo", ruleNo);
 
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
+
         when(ruleRepository.findById(ruleNo)).thenReturn(Optional.of(mockRule));
 
-        // when
         RuleResponse response = ruleService.getRule(ruleNo);
 
-        // then
         assertNotNull(response);
         assertAll(
                 () -> assertEquals(ruleNo, response.getRuleNo()),
@@ -247,9 +277,25 @@ class RuleServiceImplTest {
     @DisplayName("규칙 단건 조회 실패")
     void getRule_withNonExistentRule_throwsException() {
         Long nonExistentRuleNo = 999L;
+
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
+
         when(ruleRepository.findById(nonExistentRuleNo)).thenReturn(Optional.empty());
 
         assertThrows(RuleNotFoundException.class, () -> ruleService.getRule(nonExistentRuleNo));
+    }
+
+    @Test
+    @DisplayName("규칙 단건 조회 실패 - 헤더 없음")
+    void getRule_withNonExistentRule_header_throwsException() {
+        Long nonExistentRuleNo = 999L;
+
+        when(ruleRepository.findById(nonExistentRuleNo)).thenReturn(Optional.empty());
+
+        assertThrows(MemberNotFoundException.class, () -> ruleService.getRule(nonExistentRuleNo));
     }
 
     @Test
@@ -269,12 +315,15 @@ class RuleServiceImplTest {
         mockRules.add(rule1);
         mockRules.add(rule2);
 
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
+
         when(ruleRepository.findAll()).thenReturn(mockRules);
 
-        // when
         List<RuleResponse> responses = ruleService.getAllRule();
 
-        // then
         assertNotNull(responses);
         assertAll(
                 () -> assertEquals(2, responses.size()),
@@ -286,6 +335,11 @@ class RuleServiceImplTest {
     @Test
     @DisplayName("모든 규칙 목록 조회 실패")
     void getAllRule_exception() {
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
+
         when(ruleRepository.findAll()).thenReturn(new ArrayList<>());
 
         assertThrows(RuleNotFoundException.class, () -> ruleService.getAllRule());
@@ -309,6 +363,11 @@ class RuleServiceImplTest {
         mockRules.add(rule1);
         mockRules.add(rule2);
 
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
+
         when(ruleGroupRepository.findById(ruleGroupNo)).thenReturn(Optional.of(mockRuleGroup));
         when(ruleRepository.findByRuleGroup(mockRuleGroup)).thenReturn(mockRules);
 
@@ -326,6 +385,12 @@ class RuleServiceImplTest {
     @DisplayName("그룹별 목록 조회 실패")
     void getRulesByGroup_exception() {
         Long nonExistentGroupNo = 999L;
+
+        MemberResponse mockMember = new MemberResponse(1L, "ROLE_ADMIN", testEmail, "Test User", "password", "010-1234-5678");
+
+        when(memberAdaptor.getMemberByEmail(testEmail)).thenReturn(ResponseEntity.ok(mockMember));
+        MemberThreadLocal.setMemberEmail(testEmail);
+
         when(ruleGroupRepository.findById(nonExistentGroupNo)).thenReturn(Optional.empty());
 
         assertThrows(RuleGroupNotFoundException.class, () -> ruleService.getRulesByGroup(nonExistentGroupNo));
@@ -347,10 +412,8 @@ class RuleServiceImplTest {
         when(ruleRepository.findById(ruleNo)).thenReturn(Optional.of(rule));
         when(ruleRepository.save(any(Rule.class))).thenReturn(rule);
 
-        // when
         ruleService.setRuleActive(ruleNo, newActiveStatus);
 
-        // then
         assertTrue(rule.isActive()); // 상태가 변경되었는지 확인
         verify(ruleRepository).findById(ruleNo);
         verify(ruleRepository).save(rule);

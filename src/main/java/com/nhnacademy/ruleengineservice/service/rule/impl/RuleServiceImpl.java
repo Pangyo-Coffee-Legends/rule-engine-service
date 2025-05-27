@@ -14,6 +14,7 @@ import com.nhnacademy.ruleengineservice.dto.member.MemberResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleUpdateRequest;
+import com.nhnacademy.ruleengineservice.exception.auth.AccessDeniedException;
 import com.nhnacademy.ruleengineservice.exception.member.MemberNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
@@ -50,17 +51,11 @@ public class RuleServiceImpl implements RuleService {
 
     @Override
     public RuleResponse registerRule(RuleRegisterRequest request) {
-        String email = MemberThreadLocal.getMemberEmail();
-
         RuleGroup ruleGroup = ruleGroupRepository.findById(request.getRuleGroupNo())
                 .orElseThrow(() -> new RuleGroupNotFoundException(request.getRuleGroupNo()));
 
-        ResponseEntity<MemberResponse> response = memberAdaptor.getMemberByEmail(email);
-
-        if (response == null || response.getBody() == null) {
-            log.error("registerRule member not found");
-            throw new MemberNotFoundException(email);
-        }
+        MemberResponse member = validateMember();
+        log.debug("registerRule member : {}", member);
 
         Rule rule = ruleRepository.save(
                 Rule.ofNewRule(
@@ -77,14 +72,12 @@ public class RuleServiceImpl implements RuleService {
 
         rule.getTriggerEventList().add(trigger);
 
-        MemberResponse memberResponse = response.getBody();
-        log.debug("registerRule member : {}", memberResponse);
 
         try {
             ruleMemberMappingRepository.save(
                     RuleMemberMapping.ofNewRuleMemberMapping(
                             rule,
-                            memberResponse.getNo()
+                            member.getNo()
                     )
             );
         } catch (DataAccessException e) {
@@ -97,6 +90,9 @@ public class RuleServiceImpl implements RuleService {
 
     @Override
     public RuleResponse updateRule(Long ruleNo, RuleUpdateRequest request) {
+        MemberResponse member = validateMember();
+        checkAdminRole(member);
+
         Rule rule = ruleRepository.findById(ruleNo)
                 .orElseThrow(() -> new RuleNotFoundException(ruleNo));
 
@@ -113,6 +109,9 @@ public class RuleServiceImpl implements RuleService {
 
     @Override
     public void deleteRule(Long ruleNo) {
+        MemberResponse member = validateMember();
+        checkAdminRole(member);
+
         if (!ruleRepository.existsById(ruleNo)) {
             log.error("deleteRule rule not found");
             throw new RuleNotFoundException(ruleNo);
@@ -125,6 +124,8 @@ public class RuleServiceImpl implements RuleService {
     @Override
     @Transactional(readOnly = true)
     public RuleResponse getRule(Long ruleNo) {
+        validateMember();
+
         log.debug("getRule start");
 
         return ruleRepository.findById(ruleNo)
@@ -135,6 +136,8 @@ public class RuleServiceImpl implements RuleService {
     @Override
     @Transactional(readOnly = true)
     public List<RuleResponse> getAllRule() {
+        validateMember();
+
         List<Rule> ruleList = ruleRepository.findAll();
 
         if (ruleList.isEmpty()) {
@@ -151,6 +154,8 @@ public class RuleServiceImpl implements RuleService {
     @Override
     @Transactional(readOnly = true)
     public List<RuleResponse> getRulesByGroup(Long ruleGroupNo) {
+        validateMember();
+
         RuleGroup ruleGroup = ruleGroupRepository.findById(ruleGroupNo)
                 .orElseThrow(() -> new RuleGroupNotFoundException(ruleGroupNo));
 
@@ -205,5 +210,24 @@ public class RuleServiceImpl implements RuleService {
                         .map(TriggerEvent::getEventNo)
                         .toList()
         );
+    }
+
+    private MemberResponse validateMember() {
+        String email = MemberThreadLocal.getMemberEmail();
+        ResponseEntity<MemberResponse> response = memberAdaptor.getMemberByEmail(email);
+
+        if (response == null || response.getBody() == null) {
+            log.error("Member not found: {}", email);
+            throw new MemberNotFoundException(email);
+        }
+
+        return response.getBody();
+    }
+
+    private void checkAdminRole(MemberResponse member) {
+        if (!"ROLE_ADMIN".equals(member.getRoleName())) {
+            log.error("Access denied. Required role: ROLE_ADMIN, Current role: {}", member.getRoleName());
+            throw new AccessDeniedException("관리자 권한이 필요합니다.");
+        }
     }
 }
