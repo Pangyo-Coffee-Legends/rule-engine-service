@@ -10,6 +10,4 @@ import java.util.List;
  */
 public interface RuleMemberMappingRepository extends JpaRepository<RuleMemberMapping, Long> {
     List<RuleMemberMapping> findByMbNo(Long mbNo);
-
-    void deleteByRule_RuleNo(Long ruleRuleNo);
 }

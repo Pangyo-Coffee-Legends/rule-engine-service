@@ -71,7 +71,7 @@ class ConditionServiceImplTest {
 
         assertNotNull(response);
         assertAll(
-                () -> assertEquals(1L, response.getConNo()),
+                () -> assertEquals(1L, response.getConditionNo()),
                 () -> assertEquals(conType, response.getConType())
         );
 
@@ -260,7 +260,7 @@ class ConditionServiceImplTest {
 
         assertNotNull(response);
         assertAll(
-                () -> assertEquals(conditionNo, response.getConNo()),
+                () -> assertEquals(conditionNo, response.getConditionNo()),
                 () -> assertEquals(rule.getRuleNo(), response.getRuleNo()),
                 () -> assertEquals("EQ", response.getConType()),
                 () -> assertEquals("temperature", response.getConField()),

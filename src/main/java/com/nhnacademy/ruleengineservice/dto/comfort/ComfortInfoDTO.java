@@ -35,12 +35,12 @@ public class ComfortInfoDTO {
     /**
      * ai 온도, 습도 설명
      */
-    @JsonProperty("comfort_index")
-    String comfortIndex;
+    @JsonProperty("comport-index")
+    String comportIndex;
 
     /**
      * ai co2 설명
      */
-    @JsonProperty("co2_comment")
+    @JsonProperty("co2-comment")
     String co2Comment;
 }

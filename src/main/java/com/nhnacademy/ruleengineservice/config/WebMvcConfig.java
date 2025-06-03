@@ -38,19 +38,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v1/rule-groups/**",
                         "/api/v1/rule-engine/**",
                         "/api/v1/conditions/**",
-                        "/api/v1/actions/**",
-                        "/api/v1/sensors/**"
+                        "/api/v1/actions/**"
                 );
     }
-}
 
-//    @Override
-//    public void addCorsMappings(CorsRegistry registry) {
-//        registry.addMapping("/**")
-//                //.allowedOriginPatterns("https://aiot2.live", "http://localhost:3000")
-//                .allowedOriginPatterns("*") // 우리 도메인 설정
-//                .allowedMethods("GET", "POST", "PUT", "DELETE") // 기타 들어갈 method
-//                .allowedHeaders("*")
-//                .allowCredentials(true); // front 가 인증 헤더 보낸다면 true
-//    }
-//}
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                //.allowedOriginPatterns("https://aiot2.live", "http://localhost:3000")
+                .allowedOriginPatterns("*") // 우리 도메인 설정
+                .allowedMethods("GET", "POST", "PUT", "DELETE") // 기타 들어갈 method
+                .allowedHeaders("*")
+                .allowCredentials(true); // front 가 인증 헤더 보낸다면 true
+    }
+}
