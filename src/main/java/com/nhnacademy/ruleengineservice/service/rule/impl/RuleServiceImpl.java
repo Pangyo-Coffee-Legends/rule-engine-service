@@ -113,14 +113,26 @@ public class RuleServiceImpl implements RuleService {
 
     @Override
     public void deleteRule(Long ruleNo) {
-        if (!ruleRepository.existsById(ruleNo)) {
-            log.error("deleteRule rule not found");
-            throw new RuleNotFoundException(ruleNo);
+        Rule rule = ruleRepository.findById(ruleNo)
+                .orElseThrow(() -> new RuleNotFoundException(ruleNo));
+
+        // 1. 하위 엔티티가 존재하면 삭제 불가
+        if (!rule.getActionList().isEmpty() ||
+                !rule.getConditionList().isEmpty() ||
+                !rule.getRuleParameterList().isEmpty()) {
+            throw new IllegalStateException("하위 요소가 남아 있어 삭제할 수 없습니다.");
         }
 
-        ruleRepository.deleteById(ruleNo);
-        log.debug("deleteRule success");
+        // 2. rule_member_mappings 먼저 삭제
+        ruleMemberMappingRepository.deleteByRule_RuleNo(ruleNo);
+
+        triggerRepository.deleteAll(rule.getTriggerEventList());
+
+        // 3. 룰 삭제
+        ruleRepository.delete(rule);
+        log.info("Rule {} and its mappings deleted.", ruleNo);
     }
+
 
     @Override
     @Transactional(readOnly = true)
