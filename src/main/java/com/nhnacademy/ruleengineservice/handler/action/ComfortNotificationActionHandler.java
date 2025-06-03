@@ -30,10 +30,10 @@ public class ComfortNotificationActionHandler implements ActionHandler {
 
     @Override
     public ActionResult handle(Action action, Map<String, Object> context) throws ActionHandlerException {
-        String comportIndex = (String) context.get("comport_index");
-        if (Objects.nonNull(comportIndex)) {
+        String comfortIndex = (String) context.get("comfort_index");
+        if (Objects.nonNull(comfortIndex)) {
             // aircon : 냉방기, dehumidifier: 제습기, heater: 난방기, humidifier: 가습기
-            Map<String, Boolean> deviceCommands = switch (comportIndex) {
+            Map<String, Boolean> deviceCommands = switch (comfortIndex) {
                 case "덥고 습함" -> Map.of("aircon", true, "dehumidifier", true);
                 case "춥고 건조" -> Map.of("heater", true, "humidifier", true);
                 case "최적 쾌적" -> Map.of("aircon", false, "heater", false);
