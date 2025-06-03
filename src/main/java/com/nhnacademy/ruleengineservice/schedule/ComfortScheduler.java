@@ -7,7 +7,6 @@ import com.nhnacademy.ruleengineservice.dto.engine.RuleEvaluationResult;
 import com.nhnacademy.ruleengineservice.service.engine.RuleEngineService;
 import com.nhnacademy.ruleengineservice.service.schedule.ComfortResultService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@EnableScheduling
 @Component
 @RequiredArgsConstructor
 public class ComfortScheduler {
