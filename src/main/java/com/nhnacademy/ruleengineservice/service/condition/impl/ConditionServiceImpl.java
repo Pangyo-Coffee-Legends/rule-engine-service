@@ -18,6 +18,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * {@code ConditionServiceImpl}는 {@link ConditionService}의 구현체로,
+ * 룰 엔진 내 조건(Condition) 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ * <p>
+ * 조건 등록, 삭제, 조회, 평가 등 Condition 도메인에 대한 주요 기능을 제공합니다.
+ * 각 메서드는 {@link ConditionRepository}와 {@link RuleService}를 활용하여
+ * 데이터베이스 연동 및 룰-조건 관계 관리를 담당합니다.
+ * </p>
+ *
+ * @author 강승우
+ * @since 1.0
+ */
 @Slf4j
 @Service
 @Transactional
@@ -241,6 +253,12 @@ public class ConditionServiceImpl implements ConditionService {
                 .toList();
     }
 
+    /**
+     * Condition 엔티티를 ConditionResponse로 변환합니다.
+     *
+     * @param condition 변환할 Condition 엔티티
+     * @return 변환된 ConditionResponse 객체
+     */
     private ConditionResponse toConditionResponse(Condition condition) {
         return new ConditionResponse(
                 condition.getConditionNo(),
