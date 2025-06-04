@@ -1,25 +1,21 @@
 package com.nhnacademy.ruleengineservice.handler.action;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nhnacademy.ruleengineservice.adaptor.NotifyAdaptor;
 import com.nhnacademy.ruleengineservice.domain.action.Action;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
 import com.nhnacademy.ruleengineservice.exception.action.ActionHandlerException;
-import com.nhnacademy.ruleengineservice.service.email.EmailService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.MailSendException;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.HashMap;
-import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -28,71 +24,75 @@ import static org.mockito.Mockito.*;
 class EmailActionHandlerTest {
 
     @Mock
-    private EmailService emailService;
+    private NotifyAdaptor notifyAdaptor;
 
-    @Mock
-    ObjectMapper objectMapper;
 
     @InjectMocks
     EmailActionHandler handler;
 
-    @Test
-    @DisplayName("현재가 EMAIL 인지 확인")
-    void supports() {
-        assertTrue(handler.supports("EMAIL"));
-        assertFalse(handler.supports("WEBHOOK"));
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        handler = new EmailActionHandler(notifyAdaptor);
     }
 
     @Test
-    @DisplayName("이메일 보내기 성공")
-    void handle_success() {
-        Action action = mock();
+    @DisplayName("supports 메서드는 actType이 EMAIL일 때 true, 아니면 false를 반환한다")
+    void testSupports() {
+        assertTrue(handler.supports("EMAIL"));
+        assertFalse(handler.supports("OTHER"));
+    }
+
+    @Test
+    @DisplayName("정상적인 EmailRequest를 처리하면 성공 결과를 반환한다")
+    void testHandleSuccess() {
+        String json = "{\"to\":\"test@example.com\",\"subject\":\"Hello\",\"body\":\"World\",\"type\":\"TEXT\"}";
+        Action action = mock(Action.class);
+        when(action.getActParams()).thenReturn(json);
         when(action.getActNo()).thenReturn(1L);
         when(action.getActType()).thenReturn("EMAIL");
-        String params = "{\"to\":\"test@domain.com\",\"subject\":\"제목\",\"body\":\"본문\"}";
-        when(action.getActParams()).thenReturn(params);
 
         ActionResult result = handler.handle(action, new HashMap<>());
 
-        // then
-        verify(emailService).sendTextEmail("test@domain.com", "제목", "본문");
+        verify(notifyAdaptor, times(1)).sendEmail(any());
+        assertNotNull(result);
         assertTrue(result.isSuccess());
         assertEquals("이메일 발송 성공", result.getMessage());
     }
 
     @Test
-    @DisplayName("이메일 보내기 실패")
-    void handle_whenEmailSendingFails_shouldThrowException() {
-        Action action = mock();
-        String params = "{\"to\":\"test@domain.com\",\"subject\":\"제목\",\"body\":\"본문\"}";
-        when(action.getActParams()).thenReturn(params);
+    @DisplayName("JSON 파싱 실패 시 ActionHandlerException이 발생한다")
+    void testHandleJsonParsingException() {
+        String invalidJson = "invalid json";
+        Action action = mock(Action.class);
+        when(action.getActParams()).thenReturn(invalidJson);
 
-        // EmailService.sendTextEmail() 호출 시 예외 발생하도록 설정
-        doThrow(new MailSendException("SMTP 서버 연결 실패"))
-                .when(emailService)
-                .sendTextEmail(anyString(), anyString(), anyString());
+        assertThrowsExactly(ActionHandlerException.class, () -> handler.handle(action, new HashMap<>()));
 
-        Throwable thrown = catchThrowable(() -> handler.handle(action, new HashMap<>()));
-
-        assertThat(thrown)
-                .isInstanceOf(MailSendException.class)
-                .hasMessageContaining("SMTP 서버 연결 실패");
-
-        verify(emailService).sendTextEmail("test@domain.com", "제목", "본문");
+        verify(notifyAdaptor, never()).sendEmail(any());
     }
 
     @Test
-    @DisplayName("Json 형식이 아닌 경우")
-    void handle_whenJsonProcessingException_thenThrowActionHandlerException() throws Exception {
+    @DisplayName("필수 필드 누락 시 ActionHandlerException이 발생한다")
+    void testHandleMissingField() {
+        String jsonMissingBody = "{\"to\":\"test@example.com\",\"subject\":\"Hello\"}";
         Action action = mock(Action.class);
-        String params = "잘못된 JSON";
+        when(action.getActParams()).thenReturn(jsonMissingBody);
 
-        when(action.getActParams()).thenReturn(params);
+        assertThrowsExactly(ActionHandlerException.class, () -> handler.handle(action, new HashMap<>()));
 
-        lenient().when(objectMapper.readTree(params))
-                .thenThrow(new JsonProcessingException("파싱 실패") {});
+        verify(notifyAdaptor, never()).sendEmail(any());
+    }
 
-        Map<String, Object> context = Map.of();
-        assertThrows(ActionHandlerException.class, () -> handler.handle(action, context));
+    @Test
+    @DisplayName("notifyAdaptor.sendEmail에서 예외 발생 시 ActionHandlerException이 발생한다")
+    void testHandleEmailRequestException() {
+        String json = "{\"to\":\"test@example.com\",\"subject\":\"Hello\",\"body\":\"World\"}";
+        Action action = mock(Action.class);
+        when(action.getActParams()).thenReturn(json);
+
+        doThrow(new RuntimeException("Send failed")).when(notifyAdaptor).sendEmail(any());
+
+        assertThrowsExactly(ActionHandlerException.class, () -> handler.handle(action, new HashMap<>()));
     }
 }

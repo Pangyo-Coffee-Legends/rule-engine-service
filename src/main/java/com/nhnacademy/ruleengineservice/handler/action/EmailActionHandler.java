@@ -3,11 +3,12 @@ package com.nhnacademy.ruleengineservice.handler.action;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nhnacademy.ruleengineservice.adaptor.NotifyAdaptor;
 import com.nhnacademy.ruleengineservice.domain.action.Action;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
+import com.nhnacademy.ruleengineservice.dto.email.EmailRequest;
 import com.nhnacademy.ruleengineservice.exception.action.ActionHandlerException;
 import com.nhnacademy.ruleengineservice.handler.ActionHandler;
-import com.nhnacademy.ruleengineservice.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EmailActionHandler implements ActionHandler {
 
-    private final EmailService emailService;
+    private final NotifyAdaptor notifyAdaptor;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -37,8 +38,15 @@ public class EmailActionHandler implements ActionHandler {
             String subject = emailParams.required("subject").asText();
             String body = emailParams.required("body").asText();
 
+            String type = "TEXT";
+            if (emailParams.has("type")) {
+                type = emailParams.get("type").asText();
+            }
+
+            EmailRequest request = new EmailRequest(to, subject, body, type);
+
             // 이메일 발송
-            emailService.sendTextEmail(to, subject, body);
+            notifyAdaptor.sendEmail(request);
 
             return new ActionResult(
                     action.getActNo(),
@@ -53,7 +61,7 @@ public class EmailActionHandler implements ActionHandler {
             throw new ActionHandlerException("이메일 파라미터 JSON 파싱 실패", e);
         } catch (IllegalArgumentException e) {
             throw new ActionHandlerException("필수 필드 누락: " + e.getMessage(), e);
-        } catch (ActionHandlerException e) {
+        } catch (Exception e) {
             throw new ActionHandlerException("이메일 발송 실패", e);
         }
     }

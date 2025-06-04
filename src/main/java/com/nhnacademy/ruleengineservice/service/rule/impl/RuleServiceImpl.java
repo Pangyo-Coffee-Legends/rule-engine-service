@@ -14,6 +14,7 @@ import com.nhnacademy.ruleengineservice.dto.member.MemberResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleRegisterRequest;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleResponse;
 import com.nhnacademy.ruleengineservice.dto.rule.RuleUpdateRequest;
+import com.nhnacademy.ruleengineservice.exception.auth.AccessDeniedException;
 import com.nhnacademy.ruleengineservice.exception.member.MemberNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleGroupNotFoundException;
 import com.nhnacademy.ruleengineservice.exception.rule.RuleNotFoundException;
@@ -32,6 +33,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * {@code RuleServiceImpl}는 {@link RuleService}의 구현체로,
+ * 룰(Rule) 등록, 수정, 삭제, 조회 및 활성화 상태 변경 등 룰 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ * <p>
+ * 룰 그룹({@link RuleGroup})과 연동되어 동작하며, 트리거 이벤트({@link TriggerEvent}) 생성 및 멤버 매핑을 관리합니다.
+ * Spring Security 기반의 역할 검증(ROLE_ADMIN)을 통해 관리자 권한이 필요한 작업을 제어합니다.
+ * </p>
+ *
+ * <ul>
+ *   <li>{@link #registerRule(RuleRegisterRequest)}: 새로운 룰 등록 및 트리거 이벤트 자동 생성</li>
+ *   <li>{@link #updateRule(Long, RuleUpdateRequest)}: 룰 정보 수정(관리자 전용)</li>
+ *   <li>{@link #deleteRule(Long)}: 룰 삭제(관리자 전용)</li>
+ *   <li>{@link #getRule(Long)}: 단일 룰 조회</li>
+ *   <li>{@link #getAllRule()}: 전체 룰 목록 조회</li>
+ *   <li>{@link #getRulesByGroup(Long)}: 특정 그룹에 속한 룰 조회</li>
+ *   <li>{@link #setRuleActive(Long, boolean)}: 룰 활성화 상태 변경</li>
+ * </ul>
+ *
+ * @author 강승우
+ * @since 1.0
+ */
 @Slf4j
 @Service
 @Transactional
@@ -50,17 +72,11 @@ public class RuleServiceImpl implements RuleService {
 
     @Override
     public RuleResponse registerRule(RuleRegisterRequest request) {
-        String email = MemberThreadLocal.getMemberEmail();
-
         RuleGroup ruleGroup = ruleGroupRepository.findById(request.getRuleGroupNo())
                 .orElseThrow(() -> new RuleGroupNotFoundException(request.getRuleGroupNo()));
 
-        ResponseEntity<MemberResponse> response = memberAdaptor.getMemberByEmail(email);
-
-        if (response == null || response.getBody() == null) {
-            log.error("registerRule member not found");
-            throw new MemberNotFoundException(email);
-        }
+        MemberResponse member = validateMember();
+        log.debug("registerRule member : {}", member);
 
         Rule rule = ruleRepository.save(
                 Rule.ofNewRule(
@@ -77,14 +93,12 @@ public class RuleServiceImpl implements RuleService {
 
         rule.getTriggerEventList().add(trigger);
 
-        MemberResponse memberResponse = response.getBody();
-        log.debug("registerRule member : {}", memberResponse);
 
         try {
             ruleMemberMappingRepository.save(
                     RuleMemberMapping.ofNewRuleMemberMapping(
                             rule,
-                            memberResponse.getNo()
+                            member.getNo()
                     )
             );
         } catch (DataAccessException e) {
@@ -97,6 +111,9 @@ public class RuleServiceImpl implements RuleService {
 
     @Override
     public RuleResponse updateRule(Long ruleNo, RuleUpdateRequest request) {
+        MemberResponse member = validateMember();
+        checkAdminRole(member);
+
         Rule rule = ruleRepository.findById(ruleNo)
                 .orElseThrow(() -> new RuleNotFoundException(ruleNo));
 
@@ -113,18 +130,36 @@ public class RuleServiceImpl implements RuleService {
 
     @Override
     public void deleteRule(Long ruleNo) {
+        MemberResponse member = validateMember();
+        checkAdminRole(member);
+
         if (!ruleRepository.existsById(ruleNo)) {
             log.error("deleteRule rule not found");
             throw new RuleNotFoundException(ruleNo);
         }
 
-        ruleRepository.deleteById(ruleNo);
-        log.debug("deleteRule success");
+        Rule rule = ruleRepository.findById(ruleNo)
+                .orElseThrow(() -> new RuleNotFoundException(ruleNo));
+
+        if (!rule.getActionList().isEmpty() ||
+                !rule.getConditionList().isEmpty() ||
+                !rule.getRuleParameterList().isEmpty()) {
+            throw new IllegalStateException("하위 요소가 남아 있어 삭제할 수 없습니다.");
+        }
+
+        ruleMemberMappingRepository.deleteByRule_RuleNo(ruleNo);
+
+        triggerRepository.deleteAll(rule.getTriggerEventList());
+
+        ruleRepository.delete(rule);
+        log.info("Rule {} and its mappings deleted.", ruleNo);
     }
 
     @Override
     @Transactional(readOnly = true)
     public RuleResponse getRule(Long ruleNo) {
+        validateMember();
+
         log.debug("getRule start");
 
         return ruleRepository.findById(ruleNo)
@@ -135,6 +170,8 @@ public class RuleServiceImpl implements RuleService {
     @Override
     @Transactional(readOnly = true)
     public List<RuleResponse> getAllRule() {
+        validateMember();
+
         List<Rule> ruleList = ruleRepository.findAll();
 
         if (ruleList.isEmpty()) {
@@ -151,6 +188,8 @@ public class RuleServiceImpl implements RuleService {
     @Override
     @Transactional(readOnly = true)
     public List<RuleResponse> getRulesByGroup(Long ruleGroupNo) {
+        validateMember();
+
         RuleGroup ruleGroup = ruleGroupRepository.findById(ruleGroupNo)
                 .orElseThrow(() -> new RuleGroupNotFoundException(ruleGroupNo));
 
@@ -181,6 +220,12 @@ public class RuleServiceImpl implements RuleService {
                 .orElseThrow(() -> new RuleNotFoundException(ruleNo));
     }
 
+    /**
+     * Rule 엔티티를 RuleResponse로 변환합니다.
+     *
+     * @param rule 변환할 Rule 엔티티
+     * @return 변환된 RuleResponse 객체
+     */
     private RuleResponse toRuleResponse(Rule rule) {
         return new RuleResponse(
                 rule.getRuleNo(),
@@ -205,5 +250,36 @@ public class RuleServiceImpl implements RuleService {
                         .map(TriggerEvent::getEventNo)
                         .toList()
         );
+    }
+
+    /**
+     * 현재 사용자의 이메일을 기반으로 멤버 정보를 검증합니다.
+     *
+     * @return 검증된 멤버 정보
+     * @throws MemberNotFoundException 멤버가 존재하지 않을 때 발생
+     */
+    private MemberResponse validateMember() {
+        String email = MemberThreadLocal.getMemberEmail();
+        ResponseEntity<MemberResponse> response = memberAdaptor.getMemberByEmail(email);
+
+        if (response == null || response.getBody() == null) {
+            log.error("Member not found: {}", email);
+            throw new MemberNotFoundException(email);
+        }
+
+        return response.getBody();
+    }
+
+    /**
+     * 관리자 역할 여부를 확인합니다.
+     *
+     * @param member 확인할 멤버 정보
+     * @throws AccessDeniedException 관리자 권한이 없을 때 발생
+     */
+    private void checkAdminRole(MemberResponse member) {
+        if (!"ROLE_ADMIN".equals(member.getRoleName())) {
+            log.error("Access denied. Required role: ROLE_ADMIN, Current role: {}", member.getRoleName());
+            throw new AccessDeniedException("관리자 권한이 필요합니다.");
+        }
     }
 }

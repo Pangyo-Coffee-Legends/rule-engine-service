@@ -59,7 +59,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        MemberThreadLocal.setMemberEmail(email);
+         MemberThreadLocal.setMemberEmail(email);
 
         return true;
     }

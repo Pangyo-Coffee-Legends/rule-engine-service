@@ -2,7 +2,6 @@ package com.nhnacademy.ruleengineservice.config;
 
 import com.nhnacademy.ruleengineservice.interceptor.AuthInterceptor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -40,15 +39,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v1/conditions/**",
                         "/api/v1/actions/**"
                 );
-    }
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                //.allowedOriginPatterns("https://aiot2.live", "http://localhost:3000")
-                .allowedOriginPatterns("*") // 우리 도메인 설정
-                .allowedMethods("GET", "POST", "PUT", "DELETE") // 기타 들어갈 method
-                .allowedHeaders("*")
-                .allowCredentials(true); // front 가 인증 헤더 보낸다면 true
     }
 }

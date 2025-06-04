@@ -3,6 +3,7 @@ package com.nhnacademy.ruleengineservice.service.engine;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
 import com.nhnacademy.ruleengineservice.domain.trigger.TriggerEvent;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
+import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
 import com.nhnacademy.ruleengineservice.dto.condition.ConditionResult;
 import com.nhnacademy.ruleengineservice.dto.engine.RuleEvaluationResult;
 import com.nhnacademy.ruleengineservice.repository.trigger.TriggerRepository;
@@ -13,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,11 +82,13 @@ public class RuleEngineService {
         List<String> requiredFields = conditionService.getRequiredFieldsByRule(rule);
         validateRequiredFacts(facts, requiredFields);
 
-        // 확장된 컨텍스트 생성
         Map<String, Object> enrichedContext = new HashMap<>(facts);
-        enrichedContext.put("ruleNo", rule.getRuleNo());
-        enrichedContext.put("ruleName", rule.getRuleName());
-        enrichedContext.put("executionTime", LocalDateTime.now());
+
+        // ComfortInfoDTO를 명시적으로 추가 (키: "comfortInfo")
+        ComfortInfoDTO comfortInfo = (ComfortInfoDTO) facts.get("comfortInfo");
+        if (comfortInfo != null) {
+            enrichedContext.put("comfortInfo", comfortInfo);
+        }
 
         // 조건 평가 및 결과 기록
         List<ConditionResult> conditionResults = conditionService.evaluateConditionsForRule(rule, facts);

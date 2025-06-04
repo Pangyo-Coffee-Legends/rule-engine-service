@@ -2,9 +2,8 @@ package com.nhnacademy.ruleengineservice.handler.action;
 
 import com.nhnacademy.ruleengineservice.domain.action.Action;
 import com.nhnacademy.ruleengineservice.domain.rule.Rule;
-import com.nhnacademy.ruleengineservice.dto.action.ActionResponse;
 import com.nhnacademy.ruleengineservice.dto.action.ActionResult;
-import com.nhnacademy.ruleengineservice.service.action.ActionService;
+import com.nhnacademy.ruleengineservice.dto.comfort.ComfortInfoDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -30,143 +30,133 @@ class ComfortNotificationActionHandlerTest {
     ComfortNotificationActionHandler handler;
 
     @Mock
-    ActionService actionService;
+    private Action mockAction;
 
     Rule rule;
 
     @Test
+    @DisplayName("COMFORT_NOTIFICATION 일 때 true, 아니면 false")
     void supports() {
         assertTrue(handler.supports("COMFORT_NOTIFICATION"));
         assertFalse(handler.supports("EMAIL"));
     }
 
     @Test
-    @DisplayName("덥고 습함 케이스")
-    void handle_withComportIndexHotHumid() {
-        rule = mock();
+    @DisplayName("handle: 정상 ComfortInfoDTO 입력 시 성공 결과와 명령 생성")
+    void handle_WithValidComfortInfo_ReturnsSuccessResult() {
+        when(mockAction.getActNo()).thenReturn(1L);
+        when(mockAction.getActType()).thenReturn("COMFORT_NOTIFICATION");
 
-        Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "알림2", 2);
-        setField(action, 1L);
-
-        Map<String, Object> context = new HashMap<>();
-        context.put("comport_index", "덥고 습함");
-
-        ActionResponse mockResponse = new ActionResponse(1L, 10L,
-                "COMFORT_NOTIFICATION", "cooling_mode", 1);
-        when(actionService.getAction(1L)).thenReturn(mockResponse);
-
-        ActionResult result = handler.handle(action, context);
-        System.out.println(result);
-
-        assertEquals(1L, result.getActNo());
-        assertTrue(result.isSuccess());
-        assertEquals("COMFORT_NOTIFICATION", result.getActType());
-        assertEquals("쾌적도 알림 전송 성공", result.getMessage());
-
-        Map<String, Object> output = (Map<String, Object>) result.getOutput();
-        assertEquals(true, output.get("aircon"));
-        assertEquals(true, output.get("dehumidifier"));
-        assertEquals("cooling_mode", output.get("action"));
-    }
-
-    @Test
-    @DisplayName("덥고 습함, CO2 주의 케이스")
-    void handle_withComportIndexAndCo2Comment() {
-        rule = mock();
-
-        Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "testType", 2);
-        setField(action, 1L);
-        Map<String, Object> context = new HashMap<>();
-        context.put("comport_index", "덥고 습함");
-        context.put("co2_comment", "CO2 주의");
-
-        ActionResponse mockResponse = new ActionResponse(
-                1L, // actNo
-                100L, // ruleNo
-                "AIR_CONTROL", // actType
-                "SET_TEMP_24", // actParam
-                1 // actPriority
+        ComfortInfoDTO comfortInfo = new ComfortInfoDTO(
+                "회의실",
+                30.0,
+                40.0,
+                400.0,
+                "덥고 습함",
+                "CO2 주의"
         );
-        when(actionService.getAction(1L)).thenReturn(mockResponse);
+        Map<String, Object> context = new HashMap<>();
+        context.put("comfortInfo", comfortInfo);
 
-        ActionResult result = handler.handle(action, context);
+        ActionResult result = handler.handle(mockAction, context);
 
-        verify(actionService).getAction(1L);
-
-        assertEquals(1L, result.getActNo());
+        // Then: 결과 검증
         assertTrue(result.isSuccess());
-        assertEquals("COMFORT_NOTIFICATION", result.getActType());
         assertEquals("쾌적도 알림 전송 성공", result.getMessage());
 
-        // 명시적 캐스팅 후 get() 사용
+        // 1. output을 Map<String, Object>로 캐스팅
         Map<String, Object> output = (Map<String, Object>) result.getOutput();
-        assertTrue((Boolean) output.get("aircon"));
-        assertTrue((Boolean) output.get("dehumidifier"));
-        assertTrue((Boolean) output.get("ventilator"));
-        assertEquals("SET_TEMP_24", output.get("action"));
+
+        // 2. deviceCommands 추출 및 검증
+        Map<String, Boolean> deviceCommands = (Map<String, Boolean>) output.get("deviceCommands");
+        assertNotNull(deviceCommands);
+        assertTrue(deviceCommands.get("aircon"));
+        assertTrue(deviceCommands.get("dehumidifier"));
+        assertTrue(deviceCommands.get("ventilator"));
+
+        // 3. comfortInfo 추출 및 검증
+        ComfortInfoDTO outputComfortInfo = (ComfortInfoDTO) output.get("comfortInfo");
+        assertEquals("회의실", outputComfortInfo.getLocation());
+        assertEquals(30.0, outputComfortInfo.getTemperature());
     }
 
     @Test
-    @DisplayName("춥고 건조 케이스")
-    void handle_withComportIndexColdDry() {
-        rule = mock();
-        Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "heater", 1);
-        setField(action, 2L);
+    @DisplayName("handle: ComfortInfoDTO 누락 시 실패 결과 반환")
+    void handle_MissingComfortInfo_ReturnsErrorResult() {
+        when(mockAction.getActNo()).thenReturn(1L);
+        when(mockAction.getActType()).thenReturn("COMFORT_NOTIFICATION");
 
         Map<String, Object> context = new HashMap<>();
-        context.put("comport_index", "춥고 건조");
 
-        when(actionService.getAction(2L)).thenReturn(null);
+        ActionResult result = handler.handle(mockAction, context);
 
-        ActionResult result = handler.handle(action, context);
-
-        Map<String, Object> output = (Map<String, Object>) result.getOutput();
-        assertEquals(true, output.get("heater"));
-        assertEquals(true, output.get("humidifier"));
-        assertFalse(output.containsKey("action"));
+        assertFalse(result.isSuccess());
+        assertEquals("ComfortInfoDTO 누락", result.getMessage());
     }
 
     @Test
-    @DisplayName("최적 쾌적 케이스")
-    void handle_withComportIndexOptimal() {
-        rule = mock();
-        Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "eco_mode", 1);
-        setField(action, 3L);
+    @DisplayName("handle: comfortIndex가 null 이면 ventilator 만 true, 나머지 명령 없음")
+    void handle_NullComfortIndex_GeneratesPartialCommands() {
+        when(mockAction.getActNo()).thenReturn(1L);
+        when(mockAction.getActType()).thenReturn("COMFORT_NOTIFICATION");
 
+        ComfortInfoDTO comfortInfo = new ComfortInfoDTO(
+                "회의실",       // location
+                30.0,          // temperature
+                40.0,          // humidity
+                400.0,         // co2
+                null,          // comfortIndex (null로 설정)
+                "CO2 주의"     // co2Comment
+        );
         Map<String, Object> context = new HashMap<>();
-        context.put("comport_index", "최적 쾌적");
+        context.put("comfortInfo", comfortInfo);
 
-        ActionResponse mockResponse = new ActionResponse(3L, 2L
-                , "COMFORT_NOTIFICATION", "eco_mode", 1);
-        when(actionService.getAction(3L)).thenReturn(mockResponse);
+        ActionResult result = handler.handle(mockAction, context);
 
-        ActionResult result = handler.handle(action, context);
-        System.out.println(result);
+        assertTrue(result.isSuccess());
 
         Map<String, Object> output = (Map<String, Object>) result.getOutput();
-        assertEquals(false, output.get("heater"));
-        assertNull(output.get("humidifier"));
-        assertEquals("eco_mode", output.get("action"));
+        Map<String, Boolean> commands = (Map<String, Boolean>) output.get("deviceCommands");
+
+        // CO2 주의로 ventilator는 true
+        assertTrue(commands.get("ventilator"));
+
+        // comfortIndex가 null이므로 aircon, dehumidifier 명령 없음
+        assertFalse(commands.containsKey("aircon"));
+        assertFalse(commands.containsKey("dehumidifier"));
     }
 
     @Test
-    @DisplayName("알수없는 쾌적 지수")
-    void handle_withUnknownComportIndex() {
-        rule = mock();
-        Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "eco_mode", 1);
-        setField(action, 4L);
+    @DisplayName("handle: 지원되지 않는 comfortIndex면 ventilator만 true, 나머지 명령 없음")
+    void handle_UnsupportedComfortIndex_GeneratesNoDeviceCommandsExceptVentilator() {
+        when(mockAction.getActNo()).thenReturn(1L);
+        when(mockAction.getActType()).thenReturn("COMFORT_NOTIFICATION");
 
+        ComfortInfoDTO comfortInfo = new ComfortInfoDTO(
+                "회의실",
+                30.0,
+                40.0,
+                400.0,
+                "알 수 없는 상태", // comfortIndex (지원되지 않는 값)
+                "CO2 주의"
+        );
         Map<String, Object> context = new HashMap<>();
-        context.put("comport_index", "알 수 없음");
+        context.put("comfortInfo", comfortInfo);
 
-        ActionResult result = handler.handle(action, context);
-        System.out.println(result);
+        ActionResult result = handler.handle(mockAction, context);
+
+        assertTrue(result.isSuccess());
 
         Map<String, Object> output = (Map<String, Object>) result.getOutput();
-        assertFalse(output.containsKey("aircon"));
-        assertFalse(output.containsKey("heater"));
-        assertFalse(output.containsKey("humidifier"));
-        assertFalse(output.containsKey("dehumidifier"));
+        Map<String, Boolean> commands = (Map<String, Boolean>) output.get("deviceCommands");
+
+        assertFalse(commands.containsKey("aircon"));
+        assertFalse(commands.containsKey("dehumidifier"));
+        assertFalse(commands.containsKey("heater"));
+        assertFalse(commands.containsKey("humidifier"));
+
+        // co2Comment가 "CO2 주의"이므로 ventilator 는 true
+        assertTrue(commands.get("ventilator"));
     }
 
     @Test
@@ -180,7 +170,7 @@ class ComfortNotificationActionHandlerTest {
 
         ActionResult result = handler.handle(action, context);
 
-        assertEquals(Map.of(), result.getOutput());
+        assertNull(result.getOutput());
     }
 
     private void setField(Object target, Object value) {
