@@ -22,15 +22,39 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * {@code ActionServiceImpl}는 {@link ActionService}의 구현체로,
+ * 룰 엔진에서 액션(Action) 등록, 삭제, 조회, 실행 등 액션 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ * <p>
+ * 액션의 등록/삭제/조회는 물론, 액션 실행 요청 시 {@link ActionHandlerRegistry}에서
+ * 적절한 핸들러를 찾아 액션을 실제로 수행하며, 실행 결과({@link ActionResult})를 반환합니다.
+ * </p>
+ *
+ * <ul>
+ *   <li>{@link #registerAction(ActionRegisterRequest)}: 액션 등록</li>
+ *   <li>{@link #deleteAction(Long)}: 액션 단일 삭제</li>
+ *   <li>{@link #deleteActionByRuleNoAndActionNo(Long, Long)}: 특정 룰에 속한 액션 삭제</li>
+ *   <li>{@link #deleteActionByRule(Long)}: 룰에 속한 모든 액션 삭제</li>
+ *   <li>{@link #getAction(Long)}: 액션 단일 조회</li>
+ *   <li>{@link #getActionsByRule(Long)}: 룰에 속한 액션 목록 조회</li>
+ *   <li>{@link #getActions()}: 전체 액션 목록 조회</li>
+ *   <li>{@link #performAction(Long, Map)}: 액션 실행</li>
+ *   <li>{@link #executeActionsForRule(Rule, Map)}: 룰에 속한 모든 액션 실행</li>
+ * </ul>
+ *
+ * Spring의 {@code @Service} 및 {@code @Transactional} 어노테이션이 적용되어 있으며,
+ * 내부적으로 {@code @Slf4j}를 사용해 실행 로그를 기록합니다.
+ *
+ * @author (작성자 이름)
+ * @since 1.0
+ */
 @Slf4j
 @Service
 @Transactional
 public class ActionServiceImpl implements ActionService {
 
     private final ActionRepository actionRepository;
-
     private final RuleService ruleService;
-
     private final ActionHandlerRegistry actionHandlerRegistry;
 
     public ActionServiceImpl(ActionRepository actionRepository, RuleService ruleService, ActionHandlerRegistry actionHandlerRegistry) {
@@ -181,6 +205,12 @@ public class ActionServiceImpl implements ActionService {
         return results;
     }
 
+    /**
+     * Action 엔티티를 ActionResponse로 변환합니다.
+     *
+     * @param action 변환할 Action 엔티티
+     * @return 변환된 ActionResponse 객체
+     */
     private ActionResponse toActionResponse(Action action) {
         return new ActionResponse(
                 action.getActNo(),

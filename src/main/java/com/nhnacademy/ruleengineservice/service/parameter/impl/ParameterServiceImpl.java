@@ -14,6 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * {@code ParameterServiceImpl}는 {@link ParameterService}의 구현체로,
+ * 파라미터 관련 비즈니스 로직을 처리하기 위해 생성된 서비스 클래스입니다.
+ * <p>
+ * 현재 본 클래스는 구현되어 있으나, 실제 서비스에서는 사용되지 않습니다.
+ * 추후 파라미터 기능 확장 또는 필요 시 활성화할 수 있습니다.
+ * </p>
+ *
+ * @author 강승우
+ * @since 1.0
+ */
 @Slf4j
 @Service
 @Transactional

@@ -14,6 +14,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * {@code RuleGroupServiceImpl}는 {@link RuleGroupService}의 구현체로,
+ * 룰 그룹(Rule Group) 등록, 수정, 삭제, 조회 및 활성화 상태 변경 등
+ * 룰 그룹 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ * <p>
+ * 주요 기능:
+ * <ul>
+ *   <li>룰 그룹 등록 및 중복 이름 검사</li>
+ *   <li>룰 그룹 정보 수정</li>
+ *   <li>룰 그룹 삭제</li>
+ *   <li>단일/전체 룰 그룹 조회</li>
+ *   <li>룰 그룹 활성화/비활성화 상태 변경</li>
+ * </ul>
+ * Spring의 {@code @Service} 및 {@code @Transactional} 어노테이션이 적용되어 있으며,
+ * 내부적으로 {@code @Slf4j}를 사용해 실행 로그를 기록합니다.
+ *
+ * @author 강승우
+ * @since 1.0
+ */
 @Slf4j
 @Service
 @Transactional
