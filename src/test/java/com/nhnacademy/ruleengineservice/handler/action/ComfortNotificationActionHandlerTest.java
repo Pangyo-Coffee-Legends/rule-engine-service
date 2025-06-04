@@ -161,7 +161,7 @@ class ComfortNotificationActionHandlerTest {
 
     @Test
     @DisplayName("컨텍스트에 쾌적지수 없음")
-    void handle_withoutComportIndex() {
+    void handle_withoutComfortIndex() {
         rule = mock();
         Action action = Action.ofNewAction(rule, "COMFORT_NOTIFICATION", "eco_mode", 1);
         setField(action, 5L);
