@@ -61,6 +61,6 @@
 
 ---
 ## 기여자
-| <img src="./src/main/resources/static/images/woo.png" width="300" height="300" alt="woo"/> | <img src="./src/main/resources/static/images/ho.png" width="300" height="300" alt="ho"/> |
+| ![스크린샷 2025-06-11 오후 5 46 03](https://github.com/user-attachments/assets/fb33479b-2442-4712-b633-b0c7f4369d71) | ![스크린샷 2025-06-11 오후 5 46 17](https://github.com/user-attachments/assets/0bc9b1fe-4632-4a6f-a0ee-d2ed823bee5c) |
 |--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
 | [강승우의 GitHub](https://github.com/oculusK)                                                  | [박형호의 GitHub](https://github.com/phh624)                                                |
