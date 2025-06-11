@@ -24,31 +24,15 @@
 - API 인증/인가 및 사용자 정보 ThreadLocal 관리
 
 ---
+### **전체 흐름도**
+![image](https://github.com/user-attachments/assets/a0694ddf-4f29-45a4-b0d2-f87af61c78ad)
+
+
+---
 
 ### **아키텍처**
 
-```java
-Client (Web, Postman 등)
-        │
-        ▼
-+-------------------+
-| Rule Engine API   |  <--- Feign --->  +-------------------+
-| (Spring Boot)     |                   | 외부 서비스(알림 등)|
-+-------------------+                   +-------------------+
-        │
-        ▼
-+-------------------+
-|   RabbitMQ        | <--- 비동기 알림
-+-------------------+
-        │
-        ▼
-+-------------------+
-|   Database (JPA)  |
-+-------------------+
-        │
-        ▼
-Eureka (Service Discovery)
-```
+![image](https://github.com/user-attachments/assets/dd183dfb-06ae-4fd4-b53e-922d478f294c)
 
 - REST API로 규칙/그룹/조건/액션 관리
 - RabbitMQ로 알림/이벤트 비동기 송신
@@ -58,73 +42,21 @@ Eureka (Service Discovery)
 
 ---
 
-### **폴더 구조**
-
-```java
-src/
- ├─ domain/
- │   ├─ RuleGroup.java
- │   ├─ Rule.java
- │   ├─ Condition.java
- │   ├─ Action.java
- │   └─ RuleEvaluationResult.java
- ├─ dto/
- │   ├─ RuleGroupDTO.java
- │   ├─ RuleDTO.java
- │   ├─ ConditionDTO.java
- │   ├─ ActionDTO.java
- │   └─ RuleEvaluationResultDTO.java
- ├─ repository/
- │   ├─ RuleGroupRepository.java
- │   ├─ RuleRepository.java
- │   ├─ ConditionRepository.java
- │   └─ ActionRepository.java
- ├─ service/
- │   ├─ RuleGroupService.java
- │   ├─ RuleService.java
- │   ├─ ConditionService.java
- │   ├─ ActionService.java
- │   └─ RuleEvaluationService.java
- ├─ controller/
- │   ├─ RuleGroupController.java
- │   ├─ RuleController.java
- │   ├─ ConditionController.java
- │   └─ ActionController.java
- ├─ config/
- │   ├─ FeignClientConfig.java
- │   ├─ RabbitMQConfig.java
- │   ├─ WebMvcConfig.java
- │   └─ EurekaConfig.java
- ├─ messaging/
- │   ├─ publisher/
- │   └─ subscriber/
- ├─ interceptor/
- │   └─ MemberThreadLocal.java
- └─ exception/
-     └─ GlobalExceptionHandler.java
-```
-
----
-
 ### **기술 스택**
 
-- Java 21
-- Spring Boot, Spring Cloud, Spring Data JPA
-- RabbitMQ (비동기 메시징)
-- Feign (API 통합)
-- Eureka (서비스 디스커버리)
-- MySQL, H2
-- Lombok 등
+![Java 21](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![Spring Cloud](https://img.shields.io/badge/Spring_Cloud-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
+![Feign](https://img.shields.io/badge/Feign_Client-006AFF?style=for-the-badge)
+![Eureka](https://img.shields.io/badge/Eureka-212121?style=for-the-badge&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
+![H2 Database](https://img.shields.io/badge/H2_Database-0066A1?style=for-the-badge)
+![Lombok](https://img.shields.io/badge/Lombok-A40000?style=for-the-badge)
+![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)
+![IntelliJ IDEA](https://img.shields.io/badge/IntelliJ_IDEA-000000?style=for-the-badge&logo=intellij-idea&logoColor=white)
 
----
-
-![git](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)
-![java21](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![spring](https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
-![mysql](https://img.shields.io/badge/MySQL-00000F?style=for-the-badge&logo=mysql&logoColor=white)
-![redis](https://img.shields.io/badge/redis-%23DD0031.svg?&style=for-the-badge&logo=redis&logoColor=white)
-![intellijIdea](https://img.shields.io/badge/IntelliJ_IDEA-000000.svg?style=for-the-badge&logo=intellij-idea&logoColor=white)
-![rabbitmq](https://img.shields.io/badge/rabbitmq-%23FF6600.svg?&style=for-the-badge&logo=rabbitmq&logoColor=white)
 
 
 ---
